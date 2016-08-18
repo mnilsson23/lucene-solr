@@ -26,7 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.LongFunction;
 
 import org.apache.lucene.document.DoublePoint;
-import org.apache.lucene.document.FieldType.LegacyNumericType;
+import org.apache.lucene.legacy.LegacyNumericType;
 import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.LongPoint;
@@ -123,8 +123,8 @@ public final class JoinUtil {
    * @param multipleValuesPerDocument Whether the from field has multiple terms per document
    *                                  when true fromField might be {@link DocValuesType#SORTED_NUMERIC},
    *                                  otherwise fromField should be {@link DocValuesType#NUMERIC}
-   * @param toField                   The to field to join to, should be {@link org.apache.lucene.document.LegacyIntField} or {@link org.apache.lucene.document.LegacyLongField}
-   * @param numericType               either {@link org.apache.lucene.document.FieldType.LegacyNumericType#INT} or {@link org.apache.lucene.document.FieldType.LegacyNumericType#LONG}, it should correspond to fromField and toField types
+   * @param toField                   The to field to join to, should be {@link org.apache.lucene.legacy.LegacyIntField} or {@link org.apache.lucene.legacy.LegacyLongField}
+   * @param numericType               either {@link LegacyNumericType#INT} or {@link LegacyNumericType#LONG}, it should correspond to fromField and toField types
    * @param fromQuery                 The query to match documents on the from side
    * @param fromSearcher              The searcher that executed the specified fromQuery
    * @param scoreMode                 Instructs how scores from the fromQuery are mapped to the returned query
@@ -494,7 +494,7 @@ public final class JoinUtil {
     int numSegments = indexReader.leaves().size();
     final long valueCount;
     if (numSegments == 0) {
-      return new MatchNoDocsQuery();
+      return new MatchNoDocsQuery("JoinUtil.createJoinQuery with no segments");
     } else if (numSegments == 1) {
       // No need to use the ordinal map, because there is just one segment.
       ordinalMap = null;
@@ -503,7 +503,7 @@ public final class JoinUtil {
       if (joinSortedDocValues != null) {
         valueCount = joinSortedDocValues.getValueCount();
       } else {
-        return new MatchNoDocsQuery();
+        return new MatchNoDocsQuery("JoinUtil.createJoinQuery: no join values");
       }
     } else {
       if (ordinalMap == null) {

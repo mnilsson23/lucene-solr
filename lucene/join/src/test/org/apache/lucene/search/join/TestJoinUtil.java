@@ -37,12 +37,9 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DoubleDocValuesField;
 import org.apache.lucene.document.DoublePoint;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.FieldType.LegacyNumericType;
 import org.apache.lucene.document.FloatDocValuesField;
 import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
-import org.apache.lucene.document.LegacyIntField;
-import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.SortedDocValuesField;
@@ -59,6 +56,9 @@ import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.MultiDocValues;
 import org.apache.lucene.index.MultiDocValues.OrdinalMap;
+import org.apache.lucene.legacy.LegacyIntField;
+import org.apache.lucene.legacy.LegacyLongField;
+import org.apache.lucene.legacy.LegacyNumericType;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.NoMergePolicy;
 import org.apache.lucene.index.NumericDocValues;
@@ -464,8 +464,8 @@ public class TestJoinUtil extends LuceneTestCase {
       private final Query fieldQuery = new FieldValueQuery(priceField);
 
       @Override
-      public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
-        Weight fieldWeight = fieldQuery.createWeight(searcher, false);
+      public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException {
+        Weight fieldWeight = fieldQuery.createWeight(searcher, false, boost);
         return new Weight(this) {
 
           @Override
@@ -475,15 +475,6 @@ public class TestJoinUtil extends LuceneTestCase {
           @Override
           public Explanation explain(LeafReaderContext context, int doc) throws IOException {
             return null;
-          }
-
-          @Override
-          public float getValueForNormalization() throws IOException {
-            return 0;
-          }
-
-          @Override
-          public void normalize(float norm, float topLevelBoost) {
           }
 
           @Override

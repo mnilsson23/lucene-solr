@@ -27,7 +27,6 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.TermsQuery;
 import org.apache.lucene.search.AutomatonQuery;
-import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.DocIdSet;
@@ -36,7 +35,6 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.BytesRef;
@@ -44,7 +42,6 @@ import org.apache.lucene.util.BytesRefHash;
 import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.DaciukMihovAutomatonBuilder;
-import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.search.BitDocSet;
 import org.apache.solr.search.DocSet;
 import org.apache.solr.search.Filter;
@@ -111,8 +108,8 @@ public class GraphQuery extends Query {
   }
   
   @Override
-  public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
-    Weight graphWeight = new GraphQueryWeight((SolrIndexSearcher)searcher);
+  public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException {
+    Weight graphWeight = new GraphQueryWeight((SolrIndexSearcher)searcher, boost);
     return graphWeight;
   }
   
@@ -132,18 +129,18 @@ public class GraphQuery extends Query {
   
   protected class GraphQueryWeight extends Weight {
     
-    SolrIndexSearcher fromSearcher;
-    private float queryNorm = 1.0F;
-    private float queryWeight = 1.0F; 
+    final SolrIndexSearcher fromSearcher;
+    private final float boost;
     private int frontierSize = 0;
     private int currentDepth = -1;
     private Filter filter;
     private DocSet resultSet;
     
-    public GraphQueryWeight(SolrIndexSearcher searcher) {
+    public GraphQueryWeight(SolrIndexSearcher searcher, float boost) {
       // Grab the searcher so we can run additional searches.
       super(null);
       this.fromSearcher = searcher;
+      this.boost = boost;
     }
     
     @Override
@@ -158,16 +155,6 @@ public class GraphQuery extends Query {
         List<Explanation> subs = new ArrayList<Explanation>();
         return Explanation.noMatch("No Graph Match.", subs);
       }
-    }
-    
-    @Override
-    public float getValueForNormalization() throws IOException {
-      return 1F;
-    }
-    
-    @Override
-    public void normalize(float norm, float topLevelBoost) {
-      this.queryWeight = norm * topLevelBoost;
     }
     
     /**

@@ -25,7 +25,6 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.join.JoinUtil;
 import org.apache.lucene.search.join.ScoreMode;
-import org.apache.lucene.uninverting.UninvertingReader;
 import org.apache.solr.cloud.ZkController;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.cloud.Aliases;
@@ -34,7 +33,6 @@ import org.apache.solr.common.cloud.Slice;
 import org.apache.solr.common.cloud.ZkStateReader;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
-import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.CoreContainer;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.LocalSolrQueryRequest;
@@ -45,6 +43,7 @@ import org.apache.solr.search.QParser;
 import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.search.SyntaxError;
+import org.apache.solr.uninverting.UninvertingReader;
 import org.apache.solr.util.RefCounted;
 
 /**
@@ -237,7 +236,7 @@ public class ScoreJoinQParserPlugin extends QParserPlugin {
           LocalSolrQueryRequest otherReq = new LocalSolrQueryRequest(fromCore, params);
 
           try {
-            QParser fromQueryParser = QParser.getParser(fromQueryStr, "lucene", otherReq);
+            QParser fromQueryParser = QParser.getParser(fromQueryStr, otherReq);
             Query fromQuery = fromQueryParser.getQuery();
 
             fromHolder = fromCore.getRegisteredSearcher();

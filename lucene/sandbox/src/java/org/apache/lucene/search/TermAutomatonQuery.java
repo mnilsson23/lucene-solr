@@ -186,7 +186,7 @@ public class TermAutomatonQuery extends Query {
   }
 
   @Override
-  public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
+  public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException {
     IndexReaderContext context = searcher.getTopReaderContext();
     Map<Integer,TermContext> termStates = new HashMap<>();
 
@@ -196,7 +196,7 @@ public class TermAutomatonQuery extends Query {
       }
     }
 
-    return new TermAutomatonWeight(det, searcher, termStates);
+    return new TermAutomatonWeight(det, searcher, termStates, boost);
   }
 
   @Override
@@ -245,19 +245,18 @@ public class TermAutomatonQuery extends Query {
   }
 
   private boolean equalsTo(TermAutomatonQuery other) {
-    // NOTE: not quite correct, because if terms were added in different
-    // order in each query but the language is the same, we return false:
     return checkFinished(this) &&
            checkFinished(other) &&
-           termToID.equals(other.termToID) &&
-           Operations.sameLanguage(det, other.det);
+           other == this;
   }
 
   @Override
   public int hashCode() {
     checkFinished(this);
-    // TODO: LUCENE-7295: Automaton.toDot() is very costly!
-    return classHash() ^ termToID.hashCode() + det.toDot().hashCode();
+    // LUCENE-7295: this used to be very awkward toDot() call; it is safer to assume
+    // that no two instances are equivalent instead (until somebody finds a better way to check
+    // on automaton equivalence quickly).
+    return System.identityHashCode(this);
   }
 
   /** Returns the dot (graphviz) representation of this automaton.
@@ -328,16 +327,14 @@ public class TermAutomatonQuery extends Query {
   }
 
   final class TermAutomatonWeight extends Weight {
-    private final IndexSearcher searcher;
     final Automaton automaton;
     private final Map<Integer,TermContext> termStates;
     private final Similarity.SimWeight stats;
     private final Similarity similarity;
 
-    public TermAutomatonWeight(Automaton automaton, IndexSearcher searcher, Map<Integer,TermContext> termStates) throws IOException {
+    public TermAutomatonWeight(Automaton automaton, IndexSearcher searcher, Map<Integer,TermContext> termStates, float boost) throws IOException {
       super(TermAutomatonQuery.this);
       this.automaton = automaton;
-      this.searcher = searcher;
       this.termStates = termStates;
       this.similarity = searcher.getSimilarity(true);
       List<TermStatistics> allTermStats = new ArrayList<>();
@@ -348,7 +345,7 @@ public class TermAutomatonQuery extends Query {
         }
       }
 
-      stats = similarity.computeWeight(searcher.collectionStatistics(field),
+      stats = similarity.computeWeight(boost, searcher.collectionStatistics(field),
                                        allTermStats.toArray(new TermStatistics[allTermStats.size()]));
     }
 
@@ -364,16 +361,6 @@ public class TermAutomatonQuery extends Query {
     @Override
     public String toString() {
       return "weight(" + TermAutomatonQuery.this + ")";
-    }
-
-    @Override
-    public float getValueForNormalization() {
-      return stats.getValueForNormalization();
-    }
-
-    @Override
-    public void normalize(float queryNorm, float boost) {
-      stats.normalize(queryNorm, boost);
     }
 
     @Override

@@ -45,7 +45,6 @@ import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.StringHelper;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.params.SolrParams;
-import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.apache.solr.core.CoreContainer;
 import org.apache.solr.core.SolrCore;
@@ -99,7 +98,7 @@ public class JoinQParserPlugin extends QParserPlugin {
           RefCounted<SolrIndexSearcher> fromHolder = null;
           LocalSolrQueryRequest otherReq = new LocalSolrQueryRequest(fromCore, params);
           try {
-            QParser parser = QParser.getParser(v, "lucene", otherReq);
+            QParser parser = QParser.getParser(v, otherReq);
             fromQuery = parser.getQuery();
             fromHolder = fromCore.getRegisteredSearcher();
             if (fromHolder != null) fromCoreOpenTime = fromHolder.get().getOpenNanoTime();
@@ -147,8 +146,8 @@ class JoinQuery extends Query {
   }
 
   @Override
-  public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
-    return new JoinQueryWeight((SolrIndexSearcher)searcher);
+  public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException {
+    return new JoinQueryWeight((SolrIndexSearcher)searcher, boost);
   }
 
   private class JoinQueryWeight extends ConstantScoreWeight {
@@ -158,8 +157,8 @@ class JoinQuery extends Query {
     private Similarity similarity;
     ResponseBuilder rb;
 
-    public JoinQueryWeight(SolrIndexSearcher searcher) {
-      super(JoinQuery.this);
+    public JoinQueryWeight(SolrIndexSearcher searcher, float boost) {
+      super(JoinQuery.this, boost);
       this.fromSearcher = searcher;
       SolrRequestInfo info = SolrRequestInfo.getRequestInfo();
       if (info != null) {

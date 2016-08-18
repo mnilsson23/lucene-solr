@@ -98,12 +98,12 @@ public abstract class PointRangeQuery extends Query {
   }
 
   @Override
-  public final Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
+  public final Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException {
 
     // We don't use RandomAccessWeight here: it's no good to approximate with "match all docs".
     // This is an inverted structure and should be used in the first pass:
 
-    return new ConstantScoreWeight(this) {
+    return new ConstantScoreWeight(this, boost) {
 
       private DocIdSet buildMatchingDocIdSet(LeafReader reader, PointValues values) throws IOException {
         DocIdSetBuilder result = new DocIdSetBuilder(reader.maxDoc(), values, field);
@@ -216,6 +216,26 @@ public abstract class PointRangeQuery extends Query {
         return new ConstantScoreScorer(this, score(), iterator);
       }
     };
+  }
+
+  public String getField() {
+    return field;
+  }
+
+  public int getNumDims() {
+    return numDims;
+  }
+
+  public int getBytesPerDim() {
+    return bytesPerDim;
+  }
+
+  public byte[] getLowerPoint() {
+    return lowerPoint.clone();
+  }
+
+  public byte[] getUpperPoint() {
+    return upperPoint.clone();
   }
 
   @Override

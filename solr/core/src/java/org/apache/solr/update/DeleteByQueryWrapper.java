@@ -29,8 +29,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-import org.apache.lucene.uninverting.UninvertingReader;
 import org.apache.solr.schema.IndexSchema;
+import org.apache.solr.uninverting.UninvertingReader;
 
 /** 
  * Allows access to uninverted docvalues by delete-by-queries.
@@ -65,10 +65,10 @@ final class DeleteByQueryWrapper extends Query {
   }
   
   @Override
-  public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
+  public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException {
     final LeafReader wrapped = wrap((LeafReader) searcher.getIndexReader());
     final IndexSearcher privateContext = new IndexSearcher(wrapped);
-    final Weight inner = in.createWeight(privateContext, needsScores);
+    final Weight inner = in.createWeight(privateContext, needsScores, boost);
     return new Weight(DeleteByQueryWrapper.this) {
       @Override
       public void extractTerms(Set<Term> terms) {
@@ -77,12 +77,6 @@ final class DeleteByQueryWrapper extends Query {
 
       @Override
       public Explanation explain(LeafReaderContext context, int doc) throws IOException { throw new UnsupportedOperationException(); }
-
-      @Override
-      public float getValueForNormalization() throws IOException { return inner.getValueForNormalization(); }
-
-      @Override
-      public void normalize(float norm, float topLevelBoost) { inner.normalize(norm, topLevelBoost); }
 
       @Override
       public Scorer scorer(LeafReaderContext context) throws IOException {

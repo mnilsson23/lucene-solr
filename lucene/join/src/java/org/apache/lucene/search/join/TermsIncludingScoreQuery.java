@@ -27,6 +27,7 @@ import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.legacy.LegacyNumericUtils;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
@@ -37,7 +38,6 @@ import org.apache.lucene.util.BitSetIterator;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefHash;
 import org.apache.lucene.util.FixedBitSet;
-import org.apache.lucene.util.LegacyNumericUtils;
 
 class TermsIncludingScoreQuery extends Query {
 
@@ -106,8 +106,7 @@ class TermsIncludingScoreQuery extends Query {
   }
 
   @Override
-  public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
-    final Weight originalWeight = originalQuery.createWeight(searcher, needsScores);
+  public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost) throws IOException {
     return new Weight(TermsIncludingScoreQuery.this) {
 
       @Override
@@ -131,16 +130,6 @@ class TermsIncludingScoreQuery extends Query {
           }
         }
         return Explanation.noMatch("Not a match");
-      }
-
-      @Override
-      public float getValueForNormalization() throws IOException {
-        return originalWeight.getValueForNormalization();
-      }
-
-      @Override
-      public void normalize(float norm, float boost) {
-        originalWeight.normalize(norm, boost);
       }
 
       @Override
