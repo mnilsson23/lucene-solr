@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.ranking;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.ranking;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.ranking;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -26,6 +25,7 @@ import java.util.Map;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.LeafCollector;
+import org.apache.lucene.search.Rescorer;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
@@ -48,21 +48,20 @@ import com.carrotsearch.hppc.IntIntHashMap;
 public class LTRCollector extends TopDocsCollector {
   // FIXME: This should extend ReRankCollector since it is mostly a copy
 
-  private static final Logger logger = LoggerFactory.getLogger(MethodHandles
-      .lookup().lookupClass());
-
-  private final ModelQuery reRankModel;
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  
+  private final Rescorer reRankRescorer;
   private TopDocsCollector mainCollector;
   private final IndexSearcher searcher;
   private final int reRankDocs;
   private final Map<BytesRef,Integer> boostedPriority;
 
   @SuppressWarnings("unchecked")
-  public LTRCollector(int reRankDocs, ModelQuery reRankModel, QueryCommand cmd,
+  public LTRCollector(int reRankDocs, Rescorer reRankRescorer, QueryCommand cmd,
       IndexSearcher searcher, Map<BytesRef,Integer> boostedPriority)
       throws IOException {
     super(null);
-    this.reRankModel = reRankModel;
+    this.reRankRescorer = reRankRescorer;
     this.reRankDocs = reRankDocs;
     this.boostedPriority = boostedPriority;
     Sort sort = cmd.getSort();
@@ -106,18 +105,8 @@ public class LTRCollector extends TopDocsCollector {
       }
 
       final TopDocs mainDocs = mainCollector.topDocs(0, reRankDocs);
-      TopDocs topRerankDocs;
-      try {
-        topRerankDocs = new LTRRescorer(reRankModel).rescore(searcher,
-            mainDocs, howMany);
-      } catch (final IOException e) {
-        logger.error("LTRRescorer reranking failed. " + e);
-        e.printStackTrace();
-        // If someone deployed a messed up model, we don't want to crash and
-        // burn.
-        // Return the original list at least
-        topRerankDocs = mainDocs;
-      }
+      TopDocs topRerankDocs = reRankRescorer.rescore(searcher,
+          mainDocs, howMany);
 
       if (boostedPriority != null) {
         final SolrRequestInfo info = SolrRequestInfo.getRequestInfo();
@@ -140,7 +129,6 @@ public class LTRCollector extends TopDocsCollector {
       return topRerankDocs;
 
     } catch (final Exception e) {
-      logger.error("Exception: ", e);
       throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, e);
     }
   }

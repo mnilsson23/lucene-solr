@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.feature.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.impl;
 
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.client.solrj.SolrQuery;
@@ -53,7 +52,7 @@ public class TestExternalFeatures extends TestRerankBase {
   }
 
   @Test
-  public void externalTest1() throws Exception {
+  public void testEfiInTransformerShouldNotChangeOrderOfRerankedResults() throws Exception {
     final SolrQuery query = new SolrQuery();
     query.setQuery("*:*");
     query.add("fl", "*,score");
@@ -90,7 +89,7 @@ public class TestExternalFeatures extends TestRerankBase {
   }
 
   @Test
-  public void externalStopwordTest() throws Exception {
+  public void testFeaturesUseStopwordQueryReturnEmptyFeatureVector() throws Exception {
     final SolrQuery query = new SolrQuery();
     query.setQuery("*:*");
     query.add("fl", "*,score,fv:[fv]");
@@ -98,6 +97,7 @@ public class TestExternalFeatures extends TestRerankBase {
     // Stopword only query passed in
     query.add("rq", "{!ltr reRankDocs=3 model=externalmodel efi.user_query='a'}");
 
+    // Features are query title matches, which remove stopwords, leaving blank query, so no matches
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fv==''");
 
     System.out.println(restTestHarness.query("/query" + query.toQueryString()));
@@ -111,12 +111,7 @@ public class TestExternalFeatures extends TestRerankBase {
 
     // Features we're extracting depend on external feature info not passed in
     query.add("fl", "[fv]");
-    assertJQ("/query" + query.toQueryString(), "/error/msg=='Exception for org.apache.solr.ltr.feature.impl.SolrFeature$SolrFeatureWeight [name=matchedTitle, params={q={!terms f=title}${user_query}}] Feature requires efi parameter that was not passed in request.'");
-
-    // Using nondefault store should still result in error with no efi
-    query.remove("fl");
-    query.add("fl", "[fv store=fstore2]");
-    assertJQ("/query" + query.toQueryString(), "/error/msg=='Exception for org.apache.solr.ltr.feature.impl.ValueFeature$ValueFeatureWeight [name=confidence, params={value=${myconf}}] Feature requires efi parameter that was not passed in request.'");
+    assertJQ("/query" + query.toQueryString(), "/error/msg=='Exception from createWeight for SolrFeature [name=matchedTitle, params={q={!terms f=title}${user_query}}] SolrFeatureWeight requires efi parameter that was not passed in request.'");
 
     // Adding efi in features section should make it work
     query.remove("fl");
@@ -128,5 +123,41 @@ public class TestExternalFeatures extends TestRerankBase {
     query.add("fl", "score,fvalias:[fv store=fstore2 efi.myconf=2.3]");
     query.add("rq", "{!ltr reRankDocs=3 model=externalmodel efi.user_query=w3}");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fvalias=='confidence:2.3;originalScore:1.0'");
+  }
+
+  @Test
+  public void featureExtraction_valueFeatureImplicitlyNotRequired_shouldNotScoreFeature() throws Exception {
+    final SolrQuery query = new SolrQuery();
+    query.setQuery("*:*");
+    query.add("rows", "1");
+
+    // Efi is explicitly not required, so we do not score the feature
+    query.remove("fl");
+    query.add("fl", "fvalias:[fv store=fstore2]");
+    assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fvalias=='originalScore:0.0'");
+  }
+
+  @Test
+  public void featureExtraction_valueFeatureExplicitlyNotRequired_shouldNotScoreFeature() throws Exception {
+    final SolrQuery query = new SolrQuery();
+    query.setQuery("*:*");
+    query.add("rows", "1");
+
+    // Efi is explicitly not required, so we do not score the feature
+    query.remove("fl");
+    query.add("fl", "fvalias:[fv store=fstore3]");
+    assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fvalias=='originalScore:0.0'");
+  }
+
+  @Test
+  public void featureExtraction_valueFeatureRequired_shouldThrowException() throws Exception {
+    final SolrQuery query = new SolrQuery();
+    query.setQuery("*:*");
+    query.add("rows", "1");
+
+    // Using nondefault store should still result in error with no efi when it is required (myPop)
+    query.remove("fl");
+    query.add("fl", "fvalias:[fv store=fstore4]");
+    assertJQ("/query" + query.toQueryString(), "/error/msg=='Exception from createWeight for ValueFeature [name=popularity, params={value=${myPop}, required=true}] ValueFeatureWeight requires efi parameter that was not passed in request.'");
   }
 }

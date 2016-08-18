@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.norm.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,35 +14,61 @@ package org.apache.solr.ltr.feature.norm.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.norm.impl;
+
+import java.util.LinkedHashMap;
 
 import org.apache.solr.ltr.feature.norm.Normalizer;
-import org.apache.solr.ltr.util.NamedParams;
-import org.apache.solr.ltr.util.NormalizerException;
 
 public class StandardNormalizer extends Normalizer {
 
-  private float avg;
-  private float std;
+  private float avg = 0f;
+  private float std = 1f;
 
-  @Override
-  public void init(NamedParams params) throws NormalizerException {
-    super.init(params);
-    if (!params.containsKey("avg")) {
-      throw new NormalizerException("missing param avg");
-    }
-    if (!params.containsKey("std")) {
-      throw new NormalizerException("missing param std");
-    }
-    avg = params.getFloat("avg", 0);
-    std = params.getFloat("std", 1);
-    if (std <= 0) {
-      throw new NormalizerException("std must be > 0");
-    }
+  public float getAvg() {
+    return avg;
+  }
+
+  public void setAvg(float avg) {
+    this.avg = avg;
+  }
+
+  public float getStd() {
+    return std;
+  }
+
+  public void setStd(float std) {
+    this.std = std;
+  }
+
+  public void setAvg(String avg) {
+    this.avg = Float.parseFloat(avg);
+  }
+
+  public void setStd(String std) {
+    this.std = Float.parseFloat(std);
   }
 
   @Override
   public float normalize(float value) {
     return (value - avg) / std;
+  }
+
+  @Override
+  protected LinkedHashMap<String,Object> paramsToMap() {
+    final LinkedHashMap<String,Object> params = new LinkedHashMap<>(2, 1.0f);
+    params.put("avg", avg);
+    params.put("std", std);
+    return params;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder(64); // default initialCapacity of 16 won't be enough
+    sb.append(getClass().getSimpleName()).append('(');
+    sb.append("avg=").append(avg);
+    sb.append(",std=").append(avg).append(')');
+    return sb.toString();
   }
 
 }

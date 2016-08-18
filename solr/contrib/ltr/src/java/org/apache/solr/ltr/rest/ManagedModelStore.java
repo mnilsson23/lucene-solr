@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.rest;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,12 +14,11 @@ package org.apache.solr.ltr.rest;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.rest;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -35,11 +32,11 @@ import org.apache.solr.ltr.feature.ModelStore;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.feature.norm.impl.IdentityNormalizer;
 import org.apache.solr.ltr.ranking.Feature;
+import org.apache.solr.ltr.ranking.FilterFeature;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.FeatureException;
 import org.apache.solr.ltr.util.ModelException;
 import org.apache.solr.ltr.util.NamedParams;
-import org.apache.solr.ltr.util.NormalizerException;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.rest.BaseSolrResource;
 import org.apache.solr.rest.ManagedResource;
@@ -57,9 +54,8 @@ public class ManagedModelStore extends ManagedResource implements
   ModelStore store;
   private ManagedFeatureStore featureStores;
 
-  private static final Logger logger = LoggerFactory.getLogger(MethodHandles
-      .lookup().lookupClass());
-
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  
   public ManagedModelStore(String resourceId, SolrResourceLoader loader,
       StorageIO storageIO) throws SolrException {
     super(resourceId, loader, storageIO);
@@ -69,7 +65,7 @@ public class ManagedModelStore extends ManagedResource implements
   }
 
   public void init(ManagedFeatureStore featureStores) {
-    logger.info("INIT model store");
+    log.info("INIT model store");
     this.featureStores = featureStores;
   }
 
@@ -90,7 +86,7 @@ public class ManagedModelStore extends ManagedResource implements
   }
 
   public void loadStoredModels() {
-    logger.info("------ managed models ~ loading ------");
+    log.info("------ managed models ~ loading ------");
 
     if ((managedData != null) && (managedData instanceof List)) {
       final List<Map<String,Object>> up = (List<Map<String,Object>>) managedData;
@@ -106,34 +102,27 @@ public class ManagedModelStore extends ManagedResource implements
 
   @SuppressWarnings("unchecked")
   private Feature parseFeature(Map<String,Object> featureMap,
-      FeatureStore featureStore) throws NormalizerException, FeatureException,
+      FeatureStore featureStore) throws FeatureException,
       CloneNotSupportedException {
     // FIXME name shouldn't be be null, exception?
     final String name = (String) featureMap.get(CommonLTRParams.FEATURE_NAME);
 
-    Normalizer norm = IdentityNormalizer.INSTANCE;
-    if (featureMap.containsKey(CommonLTRParams.FEATURE_NORM)) {
-      logger.info("adding normalizer {}", featureMap);
-      final Map<String,Object> normMap = (Map<String,Object>) featureMap
-          .get(CommonLTRParams.FEATURE_NORM);
-      // FIXME type shouldn't be be null, exception?
-      final String type = ((String) normMap.get(CommonLTRParams.FEATURE_TYPE));
-      NamedParams params = null;
-      if (normMap.containsKey(CommonLTRParams.FEATURE_PARAMS)) {
-        final Object paramsObj = normMap.get(CommonLTRParams.FEATURE_PARAMS);
-        if (paramsObj != null) {
-          params = new NamedParams((Map<String,Object>) paramsObj);
-        }
-      }
-      norm = Normalizer.getInstance(type, params, solrResourceLoader);
-    }
     if (featureStores == null) {
       throw new FeatureException("missing feature store");
     }
 
     Feature meta = featureStore.get(name);
-    meta = (Feature) meta.clone();
-    meta.setNorm(norm);
+    if (meta == null) {
+      throw new FeatureException("feature " + name
+          + " not found in store " + featureStore.getName());
+    }
+
+    final Object normObj = featureMap.get(CommonLTRParams.FEATURE_NORM);
+    if (normObj != null) {
+      final Normalizer norm = Normalizer.fromMap(solrResourceLoader,
+          (Map<String,Object>) normObj);
+      meta = new FilterFeature(meta, norm);
+    }
 
     return meta;
   }
@@ -178,7 +167,7 @@ public class ManagedModelStore extends ManagedResource implements
               + " in model " + name);
         }
         features.add(feature);
-      } catch (NormalizerException | FeatureException e) {
+      } catch (FeatureException e) {
         throw new SolrException(ErrorCode.BAD_REQUEST, e);
       } catch (final CloneNotSupportedException e) {
         throw new SolrException(ErrorCode.BAD_REQUEST, e);
@@ -199,7 +188,7 @@ public class ManagedModelStore extends ManagedResource implements
           type,
           LTRScoringAlgorithm.class,
           new String[0], // no sub packages
-          new Class[] { String.class, List.class, String.class, Collection.class, NamedParams.class },
+          new Class[] { String.class, List.class, String.class, List.class, NamedParams.class },
           new Object[] { name, features, featureStoreName, fstore.getFeatures(), params });
     } catch (final Exception e) {
       throw new ModelException("Model type does not exist " + type, e);
@@ -246,7 +235,7 @@ public class ManagedModelStore extends ManagedResource implements
   }
 
   @Override
-  public void doDeleteChild(BaseSolrResource endpoint, String childId) {
+  public synchronized void doDeleteChild(BaseSolrResource endpoint, String childId) {
     // FIXME: hack to delete all the stores
     if (childId.equals("*")) {
       store.clear();
@@ -254,6 +243,7 @@ public class ManagedModelStore extends ManagedResource implements
     if (store.containsModel(childId)) {
       store.delete(childId);
     }
+    storeManagedData(applyUpdatesToManagedData(null));
   }
 
   /**
@@ -272,11 +262,11 @@ public class ManagedModelStore extends ManagedResource implements
 
   public synchronized void addMetadataModel(LTRScoringAlgorithm modeldata)
       throws ModelException {
-    logger.info("adding model {}", modeldata.getName());
+    log.info("adding model {}", modeldata.getName());
     store.addModel(modeldata);
   }
 
-  public LTRScoringAlgorithm getModel(String modelName) throws ModelException {
+  public LTRScoringAlgorithm getModel(String modelName) {
     // this function replicates getModelStore().getModel(modelName), but
     // it simplifies the testing (we can avoid to mock also a ModelStore).
     return store.getModel(modelName);

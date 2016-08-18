@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.ranking;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.ranking;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.ranking;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,9 +26,11 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Rescorer;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TopDocsCollector;
 import org.apache.lucene.search.Weight;
+import org.apache.lucene.search.FilterWeight;
 import org.apache.lucene.util.BytesRef;
 import org.apache.solr.handler.component.MergeStrategy;
 import org.apache.solr.handler.component.QueryElevationComponent;
@@ -46,11 +47,13 @@ public class LTRQuery extends RankQuery {
   private Query mainQuery = new MatchAllDocsQuery();
   private final ModelQuery reRankModel;
   private final int reRankDocs;
+  private final Rescorer reRankRescorer;
   private Map<BytesRef,Integer> boostedPriority;
 
   public LTRQuery(ModelQuery reRankModel, int reRankDocs) {
     this.reRankModel = reRankModel;
     this.reRankDocs = reRankDocs;
+    this.reRankRescorer = new LTRRescorer(reRankModel);
   }
 
   @Override
@@ -103,10 +106,8 @@ public class LTRQuery extends RankQuery {
       }
     }
 
-    return new LTRCollector(reRankDocs, reRankModel, cmd, searcher,
+    return new LTRCollector(reRankDocs, reRankRescorer, cmd, searcher,
         boostedPriority);
-    // return new LTRCollector(reRankDocs, reRankModel, cmd, searcher,
-    // boostedPriority);
   }
 
   @Override
@@ -116,55 +117,33 @@ public class LTRQuery extends RankQuery {
   }
 
   @Override
-  public Weight createWeight(IndexSearcher searcher, boolean needsScores)
+  public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost)
       throws IOException {
-    final Weight mainWeight = mainQuery.createWeight(searcher, needsScores);
-    return new LTRWeight(searcher, mainWeight, reRankModel);
+    final Weight mainWeight = mainQuery.createWeight(searcher, needsScores, boost);
+    return new LTRWeight(searcher, mainWeight, reRankRescorer);
   }
 
   /**
    * This is the weight for the main solr query in the LTRQuery. The only thing
    * this really does is have an explain using the reRankQuery.
    */
-  public class LTRWeight extends Weight {
-    private final ModelQuery reRankModel;
-    private final Weight mainWeight;
+  public class LTRWeight extends FilterWeight {
+    private final Rescorer reRankRescorer;
     private final IndexSearcher searcher;
 
     public LTRWeight(IndexSearcher searcher, Weight mainWeight,
-        ModelQuery reRankModel) throws IOException {
-      super(LTRQuery.this);
-      this.reRankModel = reRankModel;
-      this.mainWeight = mainWeight;
+        Rescorer reRankRescorer) throws IOException {
+      super(LTRQuery.this,mainWeight);
+      this.reRankRescorer = reRankRescorer;
       this.searcher = searcher;
     }
 
     @Override
     public Explanation explain(LeafReaderContext context, int doc)
         throws IOException {
-      final Explanation mainExplain = mainWeight.explain(context, doc);
-      return new LTRRescorer(reRankModel).explain(searcher, mainExplain,
+      final Explanation mainExplain = in.explain(context, doc);
+      return reRankRescorer.explain(searcher, mainExplain,
           context.docBase + doc);
-    }
-
-    @Override
-    public void extractTerms(Set<Term> terms) {
-      mainWeight.extractTerms(terms);
-    }
-
-    @Override
-    public float getValueForNormalization() throws IOException {
-      return mainWeight.getValueForNormalization();
-    }
-
-    @Override
-    public void normalize(float norm, float topLevelBoost) {
-      mainWeight.normalize(norm, topLevelBoost);
-    }
-
-    @Override
-    public Scorer scorer(LeafReaderContext context) throws IOException {
-      return mainWeight.scorer(context);
     }
   }
 }

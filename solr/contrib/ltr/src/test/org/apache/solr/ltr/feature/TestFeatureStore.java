@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.feature;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature;
 
 import org.apache.solr.ltr.TestRerankBase;
 import org.apache.solr.ltr.feature.impl.FieldValueFeature;
@@ -24,7 +23,6 @@ import org.apache.solr.ltr.feature.impl.ValueFeature;
 import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.rest.ManagedFeatureStore;
 import org.apache.solr.ltr.util.FeatureException;
-import org.apache.solr.ltr.util.InvalidFeatureNameException;
 import org.apache.solr.ltr.util.NamedParams;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,8 +38,8 @@ public class TestFeatureStore extends TestRerankBase {
   }
 
   @Test
-  public void testFeatureStoreAdd() throws InvalidFeatureNameException,
-      FeatureException {
+  public void testFeatureStoreAdd() throws FeatureException 
+  {
     final FeatureStore fs = fstore.getFeatureStore("fstore-testFeature");
     for (int i = 0; i < 5; i++) {
       fstore.addFeature("c" + i, OriginalScoreFeature.class.getCanonicalName(),
@@ -55,26 +53,27 @@ public class TestFeatureStore extends TestRerankBase {
   }
 
   @Test
-  public void testFeatureStoreGet() throws FeatureException,
-      InvalidFeatureNameException {
+  public void testFeatureStoreGet() throws FeatureException
+  {
     final FeatureStore fs = fstore.getFeatureStore("fstore-testFeature2");
     for (int i = 0; i < 5; i++) {
 
-      fstore.addFeature("c" + (float) i, ValueFeature.class.getCanonicalName(),
+      fstore.addFeature("c" + i, ValueFeature.class.getCanonicalName(),
           "fstore-testFeature2", new NamedParams().add("value", i));
 
     }
 
-    for (float i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
       final Feature f = fs.get("c" + i);
       assertEquals("c" + i, f.getName());
-      assertEquals(i, f.getParams().getFloat("value"), 0.0001);
+      assertTrue(f instanceof ValueFeature);
+      final ValueFeature vf = (ValueFeature)f;
+      assertEquals(i, vf.getValue());
     }
   }
 
-  @Test(expected = FeatureException.class)
-  public void testMissingFeature() throws InvalidFeatureNameException,
-      FeatureException {
+  @Test
+  public void testMissingFeatureReturnsNull() {
     final FeatureStore fs = fstore.getFeatureStore("fstore-testFeature3");
     for (int i = 0; i < 5; i++) {
       fstore.addFeature("testc" + (float) i,
@@ -82,12 +81,12 @@ public class TestFeatureStore extends TestRerankBase {
           new NamedParams().add("value", i));
 
     }
-    fs.get("missing_feature_name");
+    assertNull(fs.get("missing_feature_name"));
   }
 
   @Test(expected = FeatureException.class)
-  public void testMissingFeature2() throws InvalidFeatureNameException,
-      FeatureException {
+  public void testAddingFeatureWithInvalidParams() throws FeatureException
+  {
     final FeatureStore fs = fstore.getFeatureStore("fstore-testFeature4");
     for (int i = 0; i < 5; i++) {
       fstore.addFeature("testc" + (float) i,

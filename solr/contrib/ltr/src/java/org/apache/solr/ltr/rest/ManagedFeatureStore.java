@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.rest;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.rest;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.rest;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
@@ -31,13 +30,12 @@ import org.apache.solr.ltr.feature.FeatureStore;
 import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.FeatureException;
-import org.apache.solr.ltr.util.InvalidFeatureNameException;
-import org.apache.solr.ltr.util.NameValidator;
 import org.apache.solr.ltr.util.NamedParams;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.rest.BaseSolrResource;
 import org.apache.solr.rest.ManagedResource;
 import org.apache.solr.rest.ManagedResourceStorage.StorageIO;
+import org.apache.solr.util.SolrPluginUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,9 +47,8 @@ public class ManagedFeatureStore extends ManagedResource implements
 
   private final Map<String,FeatureStore> stores = new HashMap<>();
 
-  private static final Logger logger = LoggerFactory.getLogger(MethodHandles
-      .lookup().lookupClass());
-
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  
   public ManagedFeatureStore(String resourceId, SolrResourceLoader loader,
       StorageIO storageIO) throws SolrException {
     super(resourceId, loader, storageIO);
@@ -73,7 +70,7 @@ public class ManagedFeatureStore extends ManagedResource implements
       Object managedData) throws SolrException {
 
     stores.clear();
-    logger.info("------ managed feature ~ loading ------");
+    log.info("------ managed feature ~ loading ------");
     if (managedData instanceof List) {
       @SuppressWarnings("unchecked")
       final List<Map<String,Object>> up = (List<Map<String,Object>>) managedData;
@@ -100,36 +97,26 @@ public class ManagedFeatureStore extends ManagedResource implements
     try {
 
       addFeature(name, type, store, params);
-    } catch (final InvalidFeatureNameException e) {
-      throw new SolrException(ErrorCode.BAD_REQUEST, e);
     } catch (final FeatureException e) {
-      logger.error(e.getMessage());
-      e.printStackTrace();
       throw new SolrException(ErrorCode.BAD_REQUEST, e);
     }
   }
 
   public synchronized void addFeature(String name, String type,
       String featureStore, NamedParams params)
-      throws InvalidFeatureNameException, FeatureException {
+      throws FeatureException {
     if (featureStore == null) {
       featureStore = CommonLTRParams.DEFAULT_FEATURE_STORE_NAME;
     }
 
-    logger.info("register feature {} -> {} in store [" + featureStore + "]",
+    log.info("register feature {} -> {} in store [" + featureStore + "]",
         name, type);
-    if (!NameValidator.check(name)) {
-      throw new InvalidFeatureNameException(name);
-    }
 
     final FeatureStore fstore = getFeatureStore(featureStore);
 
     if (fstore.containsFeature(name)) {
-      logger.error(
-          "feature {} yet contained in the store, please use a different name",
-          name);
-      throw new InvalidFeatureNameException(name
-          + " yet contained in the store");
+      throw new FeatureException(name
+          + " already contained in the store, please use a different name");
     }
 
     if (params == null) {
@@ -149,6 +136,7 @@ public class ManagedFeatureStore extends ManagedResource implements
     try {
       final Feature f = solrResourceLoader.newInstance(type, Feature.class);
       f.init(name, params, id);
+      SolrPluginUtils.invokeSetters(f, params.entrySet());
       return f;
 
     } catch (final Exception e) {
@@ -184,14 +172,14 @@ public class ManagedFeatureStore extends ManagedResource implements
   }
 
   @Override
-  public void doDeleteChild(BaseSolrResource endpoint, String childId) {
+  public synchronized void doDeleteChild(BaseSolrResource endpoint, String childId) {
     if (childId.equals("*")) {
       stores.clear();
-      return;
     }
     if (stores.containsKey(childId)) {
       stores.remove(childId);
     }
+    storeManagedData(applyUpdatesToManagedData(null));
   }
 
   /**

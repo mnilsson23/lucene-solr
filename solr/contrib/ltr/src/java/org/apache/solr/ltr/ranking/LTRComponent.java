@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.ranking;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.ranking;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.ranking;
 
 import java.io.IOException;
 
@@ -62,17 +61,11 @@ public class LTRComponent extends SearchComponent implements SolrCoreAware,
 
   @Override
   public void inform(SolrCore core) {
-    core.getRestManager().addManagedResource(
+    final ManagedFeatureStore fr = (ManagedFeatureStore) core.getRestManager().addManagedResource(
         CommonLTRParams.FEATURE_STORE_END_POINT, ManagedFeatureStore.class);
-    final ManagedFeatureStore fr = (ManagedFeatureStore) core.getRestManager()
-        .getManagedResource(CommonLTRParams.FEATURE_STORE_END_POINT);
-    core.getRestManager().addManagedResource(
+    final ManagedModelStore mr = (ManagedModelStore) core.getRestManager().addManagedResource(
         CommonLTRParams.MODEL_STORE_END_POINT, ManagedModelStore.class);
 
-    final ManagedModelStore mr = (ManagedModelStore) core.getRestManager()
-        .getManagedResource(CommonLTRParams.MODEL_STORE_END_POINT);
-    // core.getResourceLoader().getManagedResourceRegistry().registerManagedResource(LTRParams.FSTORE_END_POINT,
-    // , observer);
     mr.init(fr);
     // now we can safely load the models
     mr.loadStoredModels();

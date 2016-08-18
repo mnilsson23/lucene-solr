@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.feature;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +26,6 @@ import java.util.Set;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.util.ModelException;
-import org.apache.solr.ltr.util.NameValidator;
 
 /**
  * Contains the model and features declared.
@@ -40,14 +38,8 @@ public class ModelStore {
     availableModels = new HashMap<>();
   }
 
-  public synchronized LTRScoringAlgorithm getModel(String name)
-      throws ModelException {
-    final LTRScoringAlgorithm model = availableModels.get(name);
-    if (model == null) {
-      throw new ModelException("cannot find model " + name);
-    }
-    return model;
-
+  public synchronized LTRScoringAlgorithm getModel(String name) {
+    return availableModels.get(name);
   }
 
   public boolean containsModel(String modelName) {
@@ -65,24 +57,21 @@ public class ModelStore {
    * @return the available models as a list of Maps objects
    */
   public List<Object> modelAsManagedResources() {
-    final List<Object> list = new ArrayList<>();
+    final List<Object> list = new ArrayList<>(availableModels.size());
     for (final LTRScoringAlgorithm modelmeta : availableModels.values()) {
-      final Map<String,Object> modelMap = new HashMap<>();
+      final Map<String,Object> modelMap = new HashMap<>(5, 1.0f);
       modelMap.put("name", modelmeta.getName());
       modelMap.put("type", modelmeta.getClass().getCanonicalName());
       modelMap.put("store", modelmeta.getFeatureStoreName());
-      final List<Map<String,Object>> features = new ArrayList<>();
+      final List<Map<String,Object>> features = new ArrayList<>(modelmeta.numFeatures());
       for (final Feature meta : modelmeta.getFeatures()) {
-        final Map<String,Object> map = new HashMap<String,Object>();
+        final Map<String,Object> map = new HashMap<String,Object>(2, 1.0f);
         map.put("name", meta.getName());
 
         final Normalizer n = meta.getNorm();
 
         if (n != null) {
-          final Map<String,Object> normalizer = new HashMap<>();
-          normalizer.put("type", n.getClass().getCanonicalName());
-          normalizer.put("params", n.getParams());
-          map.put("norm", normalizer);
+          map.put("norm", n.toMap());
         }
         features.add(map);
 
@@ -97,7 +86,6 @@ public class ModelStore {
 
   public void clear() {
     availableModels.clear();
-
   }
 
   @Override
@@ -105,9 +93,8 @@ public class ModelStore {
     return "ModelStore [availableModels=" + availableModels.keySet() + "]";
   }
 
-  public void delete(String childId) {
-    availableModels.remove(childId);
-
+  public void delete(String modelName) {
+    availableModels.remove(modelName);
   }
 
   public synchronized void addModel(LTRScoringAlgorithm modeldata)
@@ -117,9 +104,6 @@ public class ModelStore {
     if (modeldata.getFeatures().isEmpty()) {
       throw new ModelException("no features declared for model "
           + modeldata.getName());
-    }
-    if (!NameValidator.check(name)) {
-      throw new ModelException("invalid model name " + name);
     }
 
     if (containsModel(name)) {
@@ -131,12 +115,10 @@ public class ModelStore {
     final Set<String> names = new HashSet<>();
     for (final Feature feature : modeldata.getFeatures()) {
       final String fname = feature.getName();
-      if (names.contains(fname)) {
+      if (!names.add(fname)) {
         throw new ModelException("duplicated feature " + fname + " in model "
             + name);
       }
-
-      names.add(fname);
     }
 
     availableModels.put(modeldata.getName(), modeldata);

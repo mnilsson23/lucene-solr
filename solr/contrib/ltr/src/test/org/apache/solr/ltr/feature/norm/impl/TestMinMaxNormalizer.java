@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.norm.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,66 +14,89 @@ package org.apache.solr.ltr.feature.norm.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.norm.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.feature.norm.Normalizer;
-import org.apache.solr.ltr.util.NamedParams;
-import org.apache.solr.ltr.util.NormalizerException;
 import org.junit.Test;
 
 public class TestMinMaxNormalizer {
 
   private final SolrResourceLoader solrResourceLoader = new SolrResourceLoader();
 
-  @Test(expected = NormalizerException.class)
-  public void testInvalidMinMaxNoParams() throws NormalizerException {
-    Normalizer.getInstance(
-        MinMaxNormalizer.class.getCanonicalName(), new NamedParams(), solrResourceLoader);
-
-  }
-
-  @Test(expected = NormalizerException.class)
-  public void testInvalidMinMaxMissingMax() throws NormalizerException {
-
-    Normalizer.getInstance(
+  private Normalizer implTestMinMax(Map<String,Object> params,
+      float expectedMin, float expectedMax) {
+    final Normalizer n = Normalizer.getInstance(
+        solrResourceLoader,
         MinMaxNormalizer.class.getCanonicalName(),
-        new NamedParams().add("min", 0f), solrResourceLoader);
-
-  }
-
-  @Test(expected = NormalizerException.class)
-  public void testInvalidMinMaxMissingMin() throws NormalizerException {
-
-    Normalizer.getInstance(
-        MinMaxNormalizer.class.getCanonicalName(),
-        new NamedParams().add("max", 0f), solrResourceLoader);
-
-  }
-
-  @Test(expected = NormalizerException.class)
-  public void testInvalidMinMaxMissingInvalidDelta() throws NormalizerException {
-    Normalizer.getInstance(
-        MinMaxNormalizer.class.getCanonicalName(),
-        new NamedParams().add("max", 0f).add("min", 10f), solrResourceLoader);
-  }
-
-  @Test(expected = NormalizerException.class)
-  public void testInvalidMinMaxMissingInvalidDelta2()
-      throws NormalizerException {
-
-    Normalizer.getInstance(
-        "org.apache.solr.ltr.feature.norm.impl.MinMaxNormalizer",
-        new NamedParams().add("min", 10f).add("max", 10f), solrResourceLoader);
-    // min == max
+        params);
+    assertTrue(n instanceof MinMaxNormalizer);
+    final MinMaxNormalizer mmn = (MinMaxNormalizer)n;
+    assertEquals(mmn.getMin(), expectedMin, 0.0);
+    assertEquals(mmn.getMax(), expectedMax, 0.0);
+    return n;
   }
 
   @Test
-  public void testNormalizer() throws NormalizerException {
-    final Normalizer n = Normalizer.getInstance(
-        MinMaxNormalizer.class.getCanonicalName(),
-        new NamedParams().add("min", 5f).add("max", 10f), solrResourceLoader);
+  public void testInvalidMinMaxNoParams() {
+    implTestMinMax(new HashMap<String,Object>(),
+        Float.NEGATIVE_INFINITY,
+        Float.POSITIVE_INFINITY);
+  }
+
+  @Test
+  public void testInvalidMinMaxMissingMax() {
+    final Map<String,Object> params = new HashMap<String,Object>();
+    params.put("min", "0.0f");
+    implTestMinMax(params,
+        0.0f,
+        Float.POSITIVE_INFINITY);
+  }
+
+  @Test
+  public void testInvalidMinMaxMissingMin() {
+    final Map<String,Object> params = new HashMap<String,Object>();
+    params.put("max", "0.0f");
+    implTestMinMax(params,
+        Float.NEGATIVE_INFINITY,
+        0.0f);
+  }
+
+  @Test
+  public void testMinMaxNormalizerMinLargerThanMax() {
+    final Map<String,Object> params = new HashMap<String,Object>();
+    params.put("min", "10.0f");
+    params.put("max", "0.0f");
+    implTestMinMax(params,
+        10.0f,
+        0.0f);
+  }
+
+  @Test
+  public void testMinMaxNormalizerMinEqualToMax() {
+    final Map<String,Object> params = new HashMap<String,Object>();
+    params.put("min", "10.0f");
+    params.put("max", "10.0f");
+    implTestMinMax(params,
+        10.0f,
+        10.0f);
+  }
+
+  @Test
+  public void testNormalizer() {
+    final Map<String,Object> params = new HashMap<String,Object>();
+    params.put("min", "5.0f");
+    params.put("max", "10.0f");
+    final Normalizer n =
+        implTestMinMax(params,
+            5.0f,
+            10.0f);
 
     float value = 8;
     assertEquals((value - 5f) / (10f - 5f), n.normalize(value), 0.0001);

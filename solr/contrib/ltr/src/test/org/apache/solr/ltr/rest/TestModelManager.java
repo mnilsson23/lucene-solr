@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.rest;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.rest;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.rest;
 
 import org.apache.solr.SolrTestCaseJ4.SuppressSSL;
 import org.apache.solr.common.util.NamedList;
@@ -156,17 +155,6 @@ public class TestModelManager extends TestRerankBase {
         "/models/[0]/name=='6029760550880411648'");
     assertJQ(CommonLTRParams.FEATURE_STORE_END_POINT + "/_DEFAULT_",
         "/features/[1]/name=='description'");
-  }
-
-  @Test
-  public void testLoadInvalidFeature() throws Exception {
-    // relies on these ManagedResources being activated in the
-    // schema-rest.xml used by this test
-    assertJQ("/schema/managed", "/responseHeader/status==0");
-    final String newEndpoint = CommonLTRParams.FEATURE_STORE_END_POINT;
-    final String feature = "{\"name\": \"^&test1\", \"type\": \"org.apache.solr.ltr.feature.impl.ValueFeature\", \"params\": {\"value\": 1} }";
-    assertJPut(newEndpoint, feature, "/responseHeader/status==400");
-
   }
 
 }

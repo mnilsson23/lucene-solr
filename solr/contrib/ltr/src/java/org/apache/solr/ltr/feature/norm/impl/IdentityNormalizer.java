@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.norm.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,9 +14,11 @@ package org.apache.solr.ltr.feature.norm.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.norm.impl;
+
+import java.util.LinkedHashMap;
 
 import org.apache.solr.ltr.feature.norm.Normalizer;
-import org.apache.solr.ltr.util.NamedParams;
 
 public class IdentityNormalizer extends Normalizer {
 
@@ -29,11 +29,18 @@ public class IdentityNormalizer extends Normalizer {
   }
 
   @Override
-  public void init(NamedParams params) {}
-
-  @Override
   public float normalize(float value) {
     return value;
+  }
+
+  @Override
+  protected LinkedHashMap<String,Object> paramsToMap() {
+    return null;
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
   }
 
 }

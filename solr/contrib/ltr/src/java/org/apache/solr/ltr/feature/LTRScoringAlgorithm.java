@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,8 +14,10 @@ package org.apache.solr.ltr.feature;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.lucene.index.LeafReaderContext;
@@ -34,11 +34,11 @@ public abstract class LTRScoringAlgorithm {
   private final String name;
   private final String featureStoreName;
   private final List<Feature> features;
-  private final Collection<Feature> allFeatures;
+  private final List<Feature> allFeatures;
   private final NamedParams params;
 
   public LTRScoringAlgorithm(String name, List<Feature> features,
-      String featureStoreName, Collection<Feature> allFeatures,
+      String featureStoreName, List<Feature> allFeatures,
       NamedParams params) {
     this.name = name;
     this.features = features;
@@ -58,7 +58,11 @@ public abstract class LTRScoringAlgorithm {
    * @return the features
    */
   public List<Feature> getFeatures() {
-    return features;
+    return Collections.unmodifiableList(features);
+  }
+
+  public int numFeatures() {
+    return features.size();
   }
 
   public NamedParams getParams() {

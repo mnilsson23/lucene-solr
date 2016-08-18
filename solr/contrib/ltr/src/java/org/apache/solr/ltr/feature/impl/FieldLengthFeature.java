@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,25 +14,43 @@ package org.apache.solr.ltr.feature.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.impl;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.NumericDocValues;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.util.SmallFloat;
-import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.ranking.Feature;
-import org.apache.solr.ltr.ranking.FeatureScorer;
-import org.apache.solr.ltr.ranking.FeatureWeight;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.FeatureException;
 import org.apache.solr.ltr.util.NamedParams;
+import org.apache.solr.request.SolrQueryRequest;
 
 public class FieldLengthFeature extends Feature {
-  String field;
+
+  private String field;
+
+  public String getField() {
+    return field;
+  }
+
+  public void setField(String field) {
+    this.field = field;
+  }
+
+  @Override
+  protected LinkedHashMap<String,Object> paramsToMap() {
+    final LinkedHashMap<String,Object> params = new LinkedHashMap<>(1, 1.0f);
+    params.put("field", field);
+    return params;
+  }
 
   /** Cache of decoded bytes. */
 
@@ -69,26 +85,21 @@ public class FieldLengthFeature extends Feature {
     if (!params.containsKey(CommonLTRParams.FEATURE_FIELD_PARAM)) {
       throw new FeatureException("missing param field");
     }
-  }
-
-  @Override
-  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores)
-      throws IOException {
     field = (String) params.get(CommonLTRParams.FEATURE_FIELD_PARAM);
-    return new FieldLengthFeatureWeight(searcher, name, params, norm, id);
   }
 
   @Override
-  public String toString(String f) {
-    return "FieldLengthFeature [field:" + field + "]";
-
+  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores, SolrQueryRequest request, Query originalQuery, Map<String,String> efi)
+      throws IOException {
+    return new FieldLengthFeatureWeight(searcher, request, originalQuery, efi);
   }
+
 
   public class FieldLengthFeatureWeight extends FeatureWeight {
 
-    public FieldLengthFeatureWeight(IndexSearcher searcher, String name,
-        NamedParams params, Normalizer norm, int id) {
-      super(FieldLengthFeature.this, searcher, name, params, norm, id);
+    public FieldLengthFeatureWeight(IndexSearcher searcher, 
+        SolrQueryRequest request, Query originalQuery, Map<String,String> efi) {
+      super(FieldLengthFeature.this, searcher, request, originalQuery, efi);
     }
 
     @Override
@@ -128,11 +139,6 @@ public class FieldLengthFeature extends Feature {
         final float numTerms = (float) Math.pow(1f / norm, 2);
 
         return numTerms;
-      }
-
-      @Override
-      public String toString() {
-        return "FieldLengthFeature [name=" + name + " field=" + field + "]";
       }
 
       @Override

@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.ranking;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.ranking;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.ranking;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +51,7 @@ public class LambdaMARTModel extends LTRScoringAlgorithm {
       }
 
       if ((featureIndex < 0) || // unsupported feature
-          (featureIndex > featureVector.length) /*
+          (featureIndex >= featureVector.length) /*
                                                  * tree is looking for a feature
                                                  * that does not exist
                                                  */
@@ -170,7 +169,7 @@ public class LambdaMARTModel extends LTRScoringAlgorithm {
   }
 
   public LambdaMARTModel(String name, List<Feature> features,
-      String featureStoreName, Collection<Feature> allFeatures,
+      String featureStoreName, List<Feature> allFeatures,
       NamedParams params) throws ModelException {
     super(name, features, featureStoreName, allFeatures, params);
 

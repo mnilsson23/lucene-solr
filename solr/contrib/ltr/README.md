@@ -18,7 +18,7 @@ the techproducts example please follow these steps.
 
     `cd solr`
     `ant dist`
-    `ant example`
+    `ant server`
 
 2. Run the example to setup the index
 
@@ -33,7 +33,7 @@ the techproducts example please follow these steps.
         `mkdir example/techproducts/solr/techproducts/lib`
      3. Install the plugin in the lib folder
 
-        `cp build/contrib/ltr/lucene-ltr-6.0.0-SNAPSHOT.jar example/techproducts/solr/techproducts/lib/`
+        `cp build/contrib/ltr/lucene-ltr-7.0.0-SNAPSHOT.jar example/techproducts/solr/techproducts/lib/`
      4. Replace the original solrconfig with one importing all the ltr components
 
         `cp contrib/ltr/example/solrconfig.xml example/techproducts/solr/techproducts/conf/`
@@ -159,7 +159,12 @@ using standard Solr queries. As an example:
   "name" : "userTextTitleMatch",
   "type" : "org.apache.solr.ltr.feature.impl.SolrFeature",
   "params" : { "q" : "{!field f=title}${user_text}" }
-}
+},
+ {
+   "name" : "userFromMobile",
+   "type" : "org.apache.solr.ltr.feature.impl.ValueFeature",
+   "params" : { "value" : ${userFromMobile}, "required":true }
+ }
 ]
 ```
 
@@ -194,7 +199,12 @@ called 'user_text' passed in through the request, and will fire if there is
 a term match for the document field 'title' from the value of the external
 field 'user_text'.  You can provide default values for external features as
 well by specifying ${myField:myDefault}, similar to how you would in a Solr config.
-See the "Run a Rerank Query" section for how to pass in external information.
+In this case, the fifth feature (userFromMobile) will be looking for an external parameter
+called 'userFromMobile' passed in through the request, if the ValueFeature is :
+required=true, it will throw an exception if the external feature is not passed
+required=false, it will silently ignore the feature and avoid the scoring ( at Document scoring time, the model will consider 0 as feature value)
+The advantage in defining a feature as not required, where possible, is to avoid wasting caching space and time in calculating the featureScore.
+See the [Run a Rerank Query](#run-a-rerank-query) section for how to pass in external information.
 
 ### Custom Features
 Custom features can be created by extending from

@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,10 +14,13 @@ package org.apache.solr.ltr.feature.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.DocIdSet;
@@ -32,12 +33,8 @@ import org.apache.lucene.util.Bits;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrCore;
-import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.ranking.Feature;
-import org.apache.solr.ltr.ranking.FeatureScorer;
-import org.apache.solr.ltr.ranking.FeatureWeight;
 import org.apache.solr.ltr.util.FeatureException;
-import org.apache.solr.ltr.util.NamedParams;
 import org.apache.solr.request.LocalSolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.search.QParser;
@@ -47,10 +44,53 @@ import org.apache.solr.search.SyntaxError;
 
 public class SolrFeature extends Feature {
 
+  private String df;
+  private String q;
+  private List<String> fq;
+
+  public String getDf() {
+    return df;
+  }
+
+  public void setDf(String df) {
+    this.df = df;
+  }
+
+  public String getQ() {
+    return q;
+  }
+
+  public void setQ(String q) {
+    this.q = q;
+  }
+
+  public List<String> getFq() {
+    return fq;
+  }
+
+  public void setFq(List<String> fq) {
+    this.fq = fq;
+  }
+
   @Override
-  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores)
+  protected LinkedHashMap<String,Object> paramsToMap() {
+    final LinkedHashMap<String,Object> params = new LinkedHashMap<>(3, 1.0f);
+    if (df != null) {
+      params.put("df", df);
+    }
+    if (q != null) {
+      params.put("q", q);
+    }
+    if (fq != null) {
+      params.put("fq", fq);
+    }
+    return params;
+  }
+
+  @Override
+  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores, SolrQueryRequest request, Query originalQuery, Map<String,String> efi)
       throws IOException {
-    return new SolrFeatureWeight(searcher, name, params, norm, id);
+    return new SolrFeatureWeight(searcher, request, originalQuery, efi);
   }
 
   public class SolrFeatureWeight extends FeatureWeight {
@@ -58,19 +98,12 @@ public class SolrFeature extends Feature {
     Query query;
     List<Query> queryAndFilters;
 
-    public SolrFeatureWeight(IndexSearcher searcher, String name,
-        NamedParams params, Normalizer norm, int id) throws IOException {
-      super(SolrFeature.this, searcher, name, params, norm, id);
-    }
-
-    @Override
-    public void process() throws IOException {
+    public SolrFeatureWeight(IndexSearcher searcher, 
+        SolrQueryRequest request, Query originalQuery, Map<String,String> efi) throws IOException {
+      super(SolrFeature.this, searcher, request, originalQuery, efi);
       try {
-        final String df = (String) getParams().get(CommonParams.DF);
-        final String defaultParser = (String) getParams().get("defaultParser");
-        String solrQuery = (String) getParams().get(CommonParams.Q);
-        final List<String> fqs = (List<String>) getParams()
-            .get(CommonParams.FQ);
+        String solrQuery = q;
+        final List<String> fqs = fq;
 
         if (((solrQuery == null) || solrQuery.isEmpty())
             && ((fqs == null) || fqs.isEmpty())) {
@@ -83,7 +116,7 @@ public class SolrFeature extends Feature {
 
         solrQuery = macroExpander.expand(solrQuery);
         if (solrQuery == null) {
-          throw new FeatureException("Feature requires efi parameter that was not passed in request.");
+          throw new FeatureException(this.getClass().getSimpleName()+" requires efi parameter that was not passed in request.");
         }
 
         final SolrQueryRequest req = makeRequest(request.getCore(), solrQuery,
@@ -109,8 +142,7 @@ public class SolrFeature extends Feature {
           }
         }
 
-        final QParser parser = QParser.getParser(solrQuery,
-              defaultParser == null ? "lucene" : defaultParser, req);
+        final QParser parser = QParser.getParser(solrQuery, null, req);
         query = parser.parse();
 
         // Query can be null if there was no input to parse, for instance if you
@@ -201,14 +233,12 @@ public class SolrFeature extends Feature {
     }
 
     public class SolrFeatureScorer extends FeatureScorer {
-      Scorer solrScorer;
-      String q;
-      DocIdSetIterator itr;
+      final private Scorer solrScorer;
+      final private DocIdSetIterator itr;
 
       public SolrFeatureScorer(FeatureWeight weight, Scorer solrScorer,
           DocIdSetIterator filterIterator) {
         super(weight);
-        q = (String) getParams().get(CommonParams.Q);
         this.solrScorer = solrScorer;
         itr = new SolrFeatureScorerIterator(filterIterator,
             solrScorer.iterator());
@@ -217,11 +247,6 @@ public class SolrFeature extends Feature {
       @Override
       public float score() throws IOException {
         return solrScorer.score();
-      }
-
-      @Override
-      public String toString() {
-        return "SolrFeature [function:" + q + "]";
       }
 
       @Override
@@ -236,8 +261,8 @@ public class SolrFeature extends Feature {
 
       private class SolrFeatureScorerIterator extends DocIdSetIterator {
 
-        DocIdSetIterator filterIterator;
-        DocIdSetIterator scorerFilter;
+        final private DocIdSetIterator filterIterator;
+        final private DocIdSetIterator scorerFilter;
         int docID;
 
         SolrFeatureScorerIterator(DocIdSetIterator filterIterator,
@@ -276,24 +301,17 @@ public class SolrFeature extends Feature {
     }
 
     public class SolrFeatureFilterOnlyScorer extends FeatureScorer {
-      String fq;
-      DocIdSetIterator itr;
+      final private DocIdSetIterator itr;
 
       public SolrFeatureFilterOnlyScorer(FeatureWeight weight,
           DocIdSetIterator iterator) {
         super(weight);
-        fq = (String) getParams().get(CommonParams.FQ);
         itr = iterator;
       }
 
       @Override
       public float score() throws IOException {
         return 1f;
-      }
-
-      @Override
-      public String toString() {
-        return "SolrFeature [function:" + fq + "]";
       }
 
       @Override

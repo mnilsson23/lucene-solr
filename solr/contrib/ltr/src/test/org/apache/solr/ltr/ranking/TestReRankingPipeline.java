@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.ranking;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,11 +14,11 @@ package org.apache.solr.ltr.ranking;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.ranking;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.apache.lucene.document.Document;
@@ -54,9 +52,8 @@ import org.slf4j.LoggerFactory;
 @SuppressCodecs("Lucene3x")
 public class TestReRankingPipeline extends LuceneTestCase {
 
-  private static final Logger logger = LoggerFactory.getLogger(MethodHandles
-      .lookup().lookupClass());
-
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  
   private IndexSearcher getSearcher(IndexReader r) {
     final IndexSearcher searcher = newSearcher(r);
 
@@ -69,7 +66,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
     for (final int i : featureIds) {
       final FieldValueFeature f = new FieldValueFeature();
       f.name = "f" + i;
-      f.params = new NamedParams().add("field", field);
+      f.setField(field);
       features.add(f);
     }
     return features;
@@ -78,7 +75,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
   private class MockModel extends LTRScoringAlgorithm {
 
     public MockModel(String name, List<Feature> features,
-        String featureStoreName, Collection<Feature> allFeatures,
+        String featureStoreName, List<Feature> allFeatures,
         NamedParams params) {
       super(name, features, featureStoreName, allFeatures, params);
     }
@@ -228,7 +225,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
     // test rerank with different topN cuts
 
     for (int topN = 1; topN <= 5; topN++) {
-      logger.info("rerank {} documents ", topN);
+      log.info("rerank {} documents ", topN);
       hits = searcher.search(bqBuilder.build(), 10);
       // meta = new MockModel();
       // rescorer = new LTRRescorer(new ModelQuery(meta));
@@ -237,7 +234,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
       hits = new TopDocs(hits.totalHits, slice, hits.getMaxScore());
       hits = rescorer.rescore(searcher, hits, topN);
       for (int i = topN - 1, j = 0; i >= 0; i--, j++) {
-        logger.info("doc {} in pos {}", searcher.doc(hits.scoreDocs[j].doc)
+        log.info("doc {} in pos {}", searcher.doc(hits.scoreDocs[j].doc)
             .get("id"), j);
 
         assertEquals(i,
@@ -263,11 +260,11 @@ public class TestReRankingPipeline extends LuceneTestCase {
     MockModel meta = new MockModel("test",
         features, "test", allFeatures, null);
     ModelQuery query = new ModelQuery(meta);
-    ModelWeight wgt = query.createWeight(null, true);
+    ModelWeight wgt = query.createWeight(null, true, 1f);
     ModelScorer modelScr = wgt.scorer(null);
     modelScr.setDocInfoParam("ORIGINAL_SCORE", 1);
     for (final ChildScorer feat : modelScr.getChildren()) {
-      assert (((FeatureScorer) feat.child).hasDocParam("ORIGINAL_SCORE"));
+      assert (((Feature.FeatureWeight.FeatureScorer) feat.child).hasDocParam("ORIGINAL_SCORE"));
     }
 
     features = makeFieldValueFeatures(new int[] {0, 1, 2}, "final-score");
@@ -276,11 +273,11 @@ public class TestReRankingPipeline extends LuceneTestCase {
     meta = new MockModel("test", features,
         "test", allFeatures, null);
     query = new ModelQuery(meta);
-    wgt = query.createWeight(null, true);
+    wgt = query.createWeight(null, true, 1f);
     modelScr = wgt.scorer(null);
     modelScr.setDocInfoParam("ORIGINAL_SCORE", 1);
     for (final ChildScorer feat : modelScr.getChildren()) {
-      assert (((FeatureScorer) feat.child).hasDocParam("ORIGINAL_SCORE"));
+      assert (((Feature.FeatureWeight.FeatureScorer) feat.child).hasDocParam("ORIGINAL_SCORE"));
     }
   }
 

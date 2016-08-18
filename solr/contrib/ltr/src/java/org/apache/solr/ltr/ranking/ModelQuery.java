@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.ranking;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.ranking;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.ranking;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +39,8 @@ import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.feature.norm.impl.IdentityNormalizer;
 import org.apache.solr.ltr.log.FeatureLogger;
+import org.apache.solr.ltr.ranking.Feature.FeatureWeight;
+import org.apache.solr.ltr.ranking.Feature.FeatureWeight.FeatureScorer;
 import org.apache.solr.ltr.util.FeatureException;
 import org.apache.solr.request.SolrQueryRequest;
 
@@ -79,10 +80,6 @@ public class ModelQuery extends Query {
 
   public String getFeatureStoreName(){
     return meta.getFeatureStoreName();
-  }
-
-  public Collection<Feature> getAllFeatures() {
-    return meta.getAllFeatures();
   }
 
   public void setOriginalQuery(Query mainQuery) {
@@ -146,41 +143,33 @@ public class ModelQuery extends Query {
     return request;
   }
 
-  public List<Feature> getFeatures() {
-    return meta.getFeatures();
-  }
-
   @Override
-  public ModelWeight createWeight(IndexSearcher searcher, boolean needsScores)
+  public ModelWeight createWeight(IndexSearcher searcher, boolean needsScores, float boost)
       throws IOException {
-    final Collection<Feature> features = getAllFeatures();
-    final List<Feature> modelFeatures = getFeatures();
+    final FeatureWeight[] allFeatureWeights = createWeights(meta.getAllFeatures(),
+        searcher, needsScores);
+    final FeatureWeight[] modelFeaturesWeights = createWeights(meta.getFeatures(),
+        searcher, needsScores);
 
-    return new ModelWeight(searcher, getWeights(modelFeatures, searcher,
-        needsScores), getWeights(features, searcher, needsScores));
+    return new ModelWeight(searcher, modelFeaturesWeights, allFeatureWeights);
   }
 
-  private FeatureWeight[] getWeights(Collection<Feature> features,
+  private FeatureWeight[] createWeights(Collection<Feature> features,
       IndexSearcher searcher, boolean needsScores) throws IOException {
     final FeatureWeight[] arr = new FeatureWeight[features.size()];
     int i = 0;
     final SolrQueryRequest req = getRequest();
     // since the feature store is a linkedhashmap order is preserved
     for (final Feature f : features) {
-      final FeatureWeight fw = f.createWeight(searcher, needsScores);
+      try {
+        final FeatureWeight fw = f.createWeight(searcher, needsScores, req, originalQuery, efi);
 
-      try{
-        fw.setRequest(req);
-        fw.setOriginalQuery(originalQuery);
-        fw.setExternalFeatureInfo(efi);
-        fw.process();
+        arr[i] = fw;
+        ++i;
       } catch (final Exception e) {
-        throw new FeatureException("Exception for " + fw.toString() + " "
+        throw new FeatureException("Exception from createWeight for " + f.toString() + " "
             + e.getMessage(), e);
       }
-
-      arr[i] = fw;
-      ++i;
     }
     return arr;
   }
@@ -254,7 +243,7 @@ public class ModelQuery extends Query {
       final List<Explanation> featureExplanations = new ArrayList<>();
       for (final FeatureWeight f : modelFeatures) {
         final Normalizer n = f.getNorm();
-        Explanation e = explanations[f.id];
+        Explanation e = explanations[f.getId()];
         if (n != IdentityNormalizer.INSTANCE) {
           e = n.explain(e);
         }
@@ -268,18 +257,6 @@ public class ModelQuery extends Query {
 
       return meta.explain(context, doc, finalScore, featureExplanations);
 
-    }
-
-    @Override
-    public float getValueForNormalization() throws IOException {
-      return 1;
-    }
-
-    @Override
-    public void normalize(float norm, float topLevelBoost) {
-      for (final FeatureWeight feature : allFeatureWeights) {
-        feature.normalize(norm, topLevelBoost);
-      }
     }
 
     @Override

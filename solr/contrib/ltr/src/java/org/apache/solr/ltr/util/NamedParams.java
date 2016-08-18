@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.util;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.util;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.util;
 
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +44,11 @@ public class NamedParams extends HashMap<String,Object> {
     }
     if (o instanceof Float) {
       final Float ff = (Float) o;
+      f = ff;
+      return f;
+    }
+    if (o instanceof String) {
+      final Float ff = Float.parseFloat((String)o);
       f = ff;
       return f;
     }

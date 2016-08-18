@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,46 +14,46 @@ package org.apache.solr.ltr.feature.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.impl;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.solr.ltr.feature.norm.Normalizer;
+import org.apache.lucene.search.Query;
 import org.apache.solr.ltr.ranking.Feature;
-import org.apache.solr.ltr.ranking.FeatureScorer;
-import org.apache.solr.ltr.ranking.FeatureWeight;
 import org.apache.solr.ltr.util.FeatureException;
 import org.apache.solr.ltr.util.NamedParams;
+import org.apache.solr.request.SolrQueryRequest;
 
 public class ValueFeature extends Feature {
-
-  protected float configValue = -1f;
-  protected String configValueStr = null;
   /** name of the attribute containing the value of this feature **/
   private static final String VALUE_FIELD = "value";
+  private static final String REQUIRED_PARAM = "required";
 
-  public ValueFeature() {}
+  private float configValue = -1f;
+  private String configValueStr = null;
 
-  @Override
-  public void init(String name, NamedParams params, int id)
-      throws FeatureException {
-    super.init(name, params, id);
-    final Object paramValue = params.get(VALUE_FIELD);
-    if (paramValue == null) {
-      throw new FeatureException("Missing the field 'value' in params for "
-          + this);
-    }
+  private Object value = null;
+  private Boolean required = null;
 
-    if (paramValue instanceof String) {
-      configValueStr = (String) paramValue;
+  public Object getValue() {
+    return value;
+  }
+
+  public void setValue(Object value) {
+    this.value = value;
+    if (value instanceof String) {
+      configValueStr = (String) value;
       if (configValueStr.trim().isEmpty()) {
         throw new FeatureException("Empty field 'value' in params for " + this);
       }
     } else {
       try {
-        configValue = NamedParams.convertToFloat(paramValue);
+        configValue = NamedParams.convertToFloat(value);
       } catch (final NumberFormatException e) {
         throw new FeatureException("Invalid type for 'value' in params for "
             + this);
@@ -63,35 +61,66 @@ public class ValueFeature extends Feature {
     }
   }
 
+  public boolean isRequired() {
+    return Boolean.TRUE.equals(required);
+  }
+
+  public void setRequired(boolean required) {
+    this.required = required;
+  }
+
   @Override
-  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores)
+  protected LinkedHashMap<String,Object> paramsToMap() {
+    final LinkedHashMap<String,Object> params = new LinkedHashMap<>(2, 1.0f);
+    params.put("value", value);
+    if (required != null) {
+      params.put("required", required);
+    }
+    return params;
+  }
+
+  public ValueFeature() {}
+
+  @Override
+  public void init(String name, NamedParams params, int id)
+      throws FeatureException {
+    super.init(name, params, id);
+    final Object paramRequired = params.get(REQUIRED_PARAM);
+    if (paramRequired != null)
+      this.required = (boolean) paramRequired;
+    final Object paramValue = params.get(VALUE_FIELD);
+    if (paramValue == null) {
+      throw new FeatureException("Missing the field 'value' in params for "
+          + this);
+    }
+
+    setValue(paramValue);
+  }
+
+  @Override
+  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores, SolrQueryRequest request, Query originalQuery, Map<String,String> efi)
       throws IOException {
-    return new ValueFeatureWeight(searcher, name, params, norm, id);
+    return new ValueFeatureWeight(searcher, request, originalQuery, efi);
   }
 
   public class ValueFeatureWeight extends FeatureWeight {
 
-    protected float featureValue;
+    final protected Float featureValue;
 
-    public ValueFeatureWeight(IndexSearcher searcher, String name,
-        NamedParams params, Normalizer norm, int id) {
-      super(ValueFeature.this, searcher, name, params, norm, id);
-    }
-
-    @Override
-    public void process() throws IOException {
-      // Value replace from external feature info if applicable. Each request
-      // can change the
-      // value if it is using ${myExternalValue} for the configValueStr,
-      // otherwise use the
-      // constant value provided in the config.
+    public ValueFeatureWeight(IndexSearcher searcher, 
+        SolrQueryRequest request, Query originalQuery, Map<String,String> efi) {
+      super(ValueFeature.this, searcher, request, originalQuery, efi);
       if (configValueStr != null) {
         final String expandedValue = macroExpander.expand(configValueStr);
-        if (expandedValue == null) {
-          throw new FeatureException("Feature requires efi parameter that was not passed in request.");
+        if (expandedValue != null) {
+          featureValue = Float.parseFloat(expandedValue);
+        } else if (isRequired()) {
+          throw new FeatureException(this.getClass().getSimpleName() + " requires efi parameter that was not passed in request.");
+        } else {
+          featureValue=null;
         }
 
-        featureValue = Float.parseFloat(expandedValue);
+
       } else {
         featureValue = configValue;
       }
@@ -99,8 +128,14 @@ public class ValueFeature extends Feature {
 
     @Override
     public FeatureScorer scorer(LeafReaderContext context) throws IOException {
-      return new ValueFeatureScorer(this, featureValue, "ValueFeature");
+      if(featureValue!=null)
+        return new ValueFeatureScorer(this, featureValue);
+      else
+        return null;
     }
+    
+
+    
 
     /**
      * Default FeatureScorer class that returns the score passed in. Can be used
@@ -110,25 +145,17 @@ public class ValueFeature extends Feature {
     public class ValueFeatureScorer extends FeatureScorer {
 
       float constScore;
-      String featureType;
       DocIdSetIterator itr;
 
-      public ValueFeatureScorer(FeatureWeight weight, float constScore,
-          String featureType) {
+      public ValueFeatureScorer(FeatureWeight weight, float constScore) {
         super(weight);
         this.constScore = constScore;
-        this.featureType = featureType;
         itr = new MatchAllIterator();
       }
 
       @Override
       public float score() {
         return constScore;
-      }
-
-      @Override
-      public String toString() {
-        return featureType + " [name=" + name + " value=" + constScore + "]";
       }
 
       @Override

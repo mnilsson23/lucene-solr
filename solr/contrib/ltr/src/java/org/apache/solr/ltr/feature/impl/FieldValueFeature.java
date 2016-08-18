@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.feature.impl;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,8 +14,11 @@ package org.apache.solr.ltr.feature.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.feature.impl;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.document.Document;
@@ -25,19 +26,35 @@ import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.solr.ltr.feature.norm.Normalizer;
+import org.apache.lucene.search.Query;
 import org.apache.solr.ltr.ranking.Feature;
-import org.apache.solr.ltr.ranking.FeatureScorer;
-import org.apache.solr.ltr.ranking.FeatureWeight;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.FeatureException;
 import org.apache.solr.ltr.util.NamedParams;
+import org.apache.solr.request.SolrQueryRequest;
 
 import com.google.common.collect.Sets;
 
 public class FieldValueFeature extends Feature {
-  String fieldName;
-  Set<String> fields = Sets.newHashSet();
+
+  private String field;
+  private Set<String> fieldAsSet;
+
+  public String getField() {
+    return field;
+  }
+
+  public void setField(String field) {
+    this.field = field;
+    fieldAsSet = Sets.newHashSet(field);
+  }
+
+  @Override
+  protected LinkedHashMap<String,Object> paramsToMap() {
+    final LinkedHashMap<String,Object> params = new LinkedHashMap<>(1, 1.0f);
+    params.put("field", field);
+    return params;
+  }
 
   public FieldValueFeature() {
 
@@ -50,27 +67,21 @@ public class FieldValueFeature extends Feature {
     if (!params.containsKey(CommonLTRParams.FEATURE_FIELD_PARAM)) {
       throw new FeatureException("missing param field");
     }
+    setField((String) params.get(CommonLTRParams.FEATURE_FIELD_PARAM));
   }
 
   @Override
-  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores)
+  public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores, SolrQueryRequest request, Query originalQuery, Map<String,String> efi)
       throws IOException {
-    fieldName = (String) params.get(CommonLTRParams.FEATURE_FIELD_PARAM);
-    fields.add(fieldName);
-    return new FieldValueFeatureWeight(searcher, name, params, norm, id);
+    return new FieldValueFeatureWeight(searcher, request, originalQuery, efi);
   }
 
-  @Override
-  public String toString(String f) {
-    return "FieldValueFeature [field:" + fieldName + "]";
-
-  }
 
   public class FieldValueFeatureWeight extends FeatureWeight {
 
-    public FieldValueFeatureWeight(IndexSearcher searcher, String name,
-        NamedParams params, Normalizer norm, int id) {
-      super(FieldValueFeature.this, searcher, name, params, norm, id);
+    public FieldValueFeatureWeight(IndexSearcher searcher, 
+        SolrQueryRequest request, Query originalQuery, Map<String,String> efi) {
+      super(FieldValueFeature.this, searcher, request, originalQuery, efi);
     }
 
     @Override
@@ -95,18 +106,18 @@ public class FieldValueFeature extends Feature {
 
         try {
           final Document document = context.reader().document(itr.docID(),
-              fields);
-          final IndexableField field = document.getField(fieldName);
-          if (field == null) {
+              fieldAsSet);
+          final IndexableField indexableField = document.getField(field);
+          if (indexableField == null) {
             // logger.debug("no field {}", f);
             // TODO define default value
             return 0;
           }
-          final Number number = field.numericValue();
+          final Number number = indexableField.numericValue();
           if (number != null) {
             return number.floatValue();
           } else {
-            final String string = field.stringValue();
+            final String string = indexableField.stringValue();
             // boolean values in the index are encoded with the
             // chars T/F
             if (string.equals("T")) {
@@ -123,11 +134,6 @@ public class FieldValueFeature extends Feature {
         }
         // TODO define default value
         return 0;
-      }
-
-      @Override
-      public String toString() {
-        return "FieldValueFeature [name=" + name + " fields=" + fields + "]";
       }
 
       @Override

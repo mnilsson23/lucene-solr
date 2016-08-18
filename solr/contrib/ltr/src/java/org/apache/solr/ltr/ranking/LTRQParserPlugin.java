@@ -1,5 +1,3 @@
-package org.apache.solr.ltr.ranking;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.solr.ltr.ranking;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.solr.ltr.ranking;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
@@ -31,7 +30,6 @@ import org.apache.solr.ltr.log.FeatureLogger;
 import org.apache.solr.ltr.rest.ManagedModelStore;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.LTRUtils;
-import org.apache.solr.ltr.util.ModelException;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.QParserPlugin;
@@ -49,8 +47,7 @@ import org.slf4j.LoggerFactory;
 public class LTRQParserPlugin extends QParserPlugin {
   public static final String NAME = "ltr";
 
-  private static final Logger logger = LoggerFactory.getLogger(MethodHandles
-      .lookup().lookupClass());
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   @Override
   public void init(@SuppressWarnings("rawtypes") NamedList args) {}
@@ -82,13 +79,12 @@ public class LTRQParserPlugin extends QParserPlugin {
             "Must provide model in the request");
       }
 
-      ModelQuery reRankModel = null;
-      try {
-        final LTRScoringAlgorithm meta = mr.getModel(modelName);
-        reRankModel = new ModelQuery(meta);
-      } catch (final ModelException e) {
-        throw new SolrException(ErrorCode.BAD_REQUEST, e);
+      final LTRScoringAlgorithm meta = mr.getModel(modelName);
+      if (meta == null) {
+        throw new SolrException(ErrorCode.BAD_REQUEST,
+            "cannot find " + CommonLTRParams.MODEL + " " + modelName);
       }
+      final ModelQuery reRankModel = new ModelQuery(meta);
 
       int reRankDocs = localParams.getInt(CommonLTRParams.RERANK_DOCS,
           CommonLTRParams.DEFAULT_RERANK_DOCS);
@@ -97,13 +93,12 @@ public class LTRQParserPlugin extends QParserPlugin {
       final int rows = params.getInt(CommonParams.ROWS,
           CommonParams.ROWS_DEFAULT);
 
-
       // Enable the feature vector cache if we are extracting features, and the features
       // we requested are the same ones we are reranking with
       final Boolean extractFeatures = (Boolean) req.getContext().get(CommonLTRParams.LOG_FEATURES_QUERY_PARAM);
       final String fvStoreName = (String) req.getContext().get(CommonLTRParams.STORE);
       final boolean fvCache = (extractFeatures != null && extractFeatures.booleanValue() &&
-          (fvStoreName == null || fvStoreName.equals(reRankModel.getFeatureStoreName())) );
+          (fvStoreName == null || fvStoreName.equals(reRankModel.getFeatureStoreName())));
       if (fvCache) {
         final FeatureLogger<?> solrLogger = FeatureLogger
             .getFeatureLogger(params.get(CommonLTRParams.FV_RESPONSE_WRITER));
@@ -122,8 +117,7 @@ public class LTRQParserPlugin extends QParserPlugin {
       final Map<String,String> externalFeatureInfo = LTRUtils.extractEFIParams(localParams);
       reRankModel.setExternalFeatureInfo(externalFeatureInfo);
 
-      logger.info("Reranking {} docs using model {}", reRankDocs, reRankModel
-          .getMetadata().getName());
+      log.info("Reranking {} docs using model {}", reRankDocs, reRankModel.getMetadata().getName());
       reRankModel.setRequest(req);
 
       return new LTRQuery(reRankModel, reRankDocs);
