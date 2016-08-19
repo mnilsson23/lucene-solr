@@ -73,20 +73,14 @@ public class TestLTRScoringModel extends TestRerankBase {
 
   @Test
   public void nullFeatureWeightsTest() {
-    final ModelException expectedException = 
-        new ModelException("Model test2 doesn't contain any weights");
-    try {
-      final List<Feature> features = getFeatures(new String[] 
-          {"constant1", "constant5"});
-      final List<Normalizer> norms = 
+    final List<Feature> features = getFeatures(new String[] 
+        {"constant1", "constant5"});
+    final List<Normalizer> norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-      final LTRScoringModel meta = new RankSVMModel("test2",
-          features, norms, "test", fstore.getFeatures(), null);
-      fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
-    }
+    final LTRScoringModel meta = new RankSVMModel("test2",
+        features, norms, "test", fstore.getFeatures(), null);
+    assertEquals("RankSVMModel(name=test2,featureWeights=[constant1=0.0,constant5=0.0])", meta.toString());
   }
 
   @Test
@@ -149,27 +143,25 @@ public class TestLTRScoringModel extends TestRerankBase {
 
   @Test
   public void missingFeatureWeightTest() {
-    final ModelException expectedException = 
-        new ModelException("no weight for feature constant5");
-    try {
-      final List<Feature> features = getFeatures(new String[] 
-          {"constant1", "constant5"});
-      final List<Normalizer> norms = 
+    final double weight1 = random().nextInt(100)/100d;
+    final double weight5missing = random().nextDouble();
+
+    final List<Feature> features = getFeatures(new String[]
+        {"constant1", "constant5"});
+    final List<Normalizer> norms =
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-      final Map<String,Object> weights = new HashMap<>();
-      weights.put("constant1", 1d);
-      weights.put("constant5missing", 1d);
+    final Map<String,Object> weights = new HashMap<>();
+    weights.put("constant1", weight1);
+    weights.put("constant5missing", weight5missing);
 
-      Map<String,Object> params = new HashMap<String,Object>();
-      params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test5",
-          features, norms, "test", fstore.getFeatures(),
-              params);
-      fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
-    }
+    Map<String,Object> params = new HashMap<String,Object>();
+    params.put("weights", weights);
+    final LTRScoringModel meta = new RankSVMModel("test5",
+        features, norms, "test", fstore.getFeatures(),
+        params);
+
+    assertEquals("RankSVMModel(name=test5,featureWeights=[constant1="+weight1+",constant5=0.0])", meta.toString());
   }
 
   @Test

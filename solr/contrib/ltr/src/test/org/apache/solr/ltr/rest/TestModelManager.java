@@ -115,10 +115,10 @@ public class TestModelManager extends TestRerankBase {
     // fails since it does not have features
     assertJPut(CommonLTRParams.MODEL_STORE_END_POINT, model,
         "/responseHeader/status==400");
-    // fails since it does not have weights
+    // success - with missing weight(s) defaulted to zero
     model = "{ \"name\":\"testmodel2\", \"class\":\"org.apache.solr.ltr.ranking.RankSVMModel\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}] }";
     assertJPut(CommonLTRParams.MODEL_STORE_END_POINT, model,
-        "/responseHeader/status==400");
+        "/responseHeader/status==0");
     // success
     model = "{ \"name\":\"testmodel3\", \"class\":\"org.apache.solr.ltr.ranking.RankSVMModel\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}],\"params\":{\"weights\":{\"test1\":1.5,\"test2\":2.0}}}";
     assertJPut(CommonLTRParams.MODEL_STORE_END_POINT, model,

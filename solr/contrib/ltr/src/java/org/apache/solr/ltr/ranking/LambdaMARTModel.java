@@ -193,14 +193,12 @@ public class LambdaMARTModel extends LTRScoringModel {
     final List<Object> jsonTrees = getParams().containsKey("trees") ?
         (List<Object>) getParams().get("trees") : null;
 
-    if ((jsonTrees == null) || jsonTrees.isEmpty()) {
-      throw new ModelException("LambdaMARTModel doesn't contain any trees");
-    }
-
-    for (final Object o : jsonTrees) {
-      final Map<String,Object> t = (Map<String,Object>) o;
-      final RegressionTree rt = new RegressionTree(t, fname2index);
-      trees.add(rt);
+    if (jsonTrees != null) {
+      for (final Object o : jsonTrees) {
+        final Map<String,Object> t = (Map<String,Object>) o;
+        final RegressionTree rt = new RegressionTree(t, fname2index);
+        trees.add(rt);
+      }
     }
 
   }

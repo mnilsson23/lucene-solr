@@ -36,7 +36,7 @@ public abstract class LTRScoringModel {
 
   private final String name;
   private final String featureStoreName;
-  private final List<Feature> features;
+  protected final List<Feature> features;
   private final List<Feature> allFeatures;
   private final Map<String,Object> params;
   private final List<Normalizer> norms;

@@ -28,6 +28,8 @@ import org.apache.solr.ltr.model.ModelException;
 
 public class RankSVMModel extends LTRScoringModel {
 
+  private static final Double defaultWeight = 0.0;
+
   protected float[] featureToWeight;
 
   /** name of the attribute containing the weight of the SVM model **/
@@ -39,25 +41,20 @@ public class RankSVMModel extends LTRScoringModel {
       Map<String,Object> params) throws ModelException {
     super(name, features, norms, featureStoreName, allFeatures, params);
 
-    if (!hasParams()) {
-      throw new ModelException("Model " + name + " doesn't contain any weights");
-    }
+    final Map<String,Double> modelWeights = (params == null ? null
+        : (Map<String,Double>) params.get(WEIGHTS_PARAM));
 
-    final Map<String,Double> modelWeights = (Map<String,Double>) getParams()
-        .get(WEIGHTS_PARAM);
-    if ((modelWeights == null) || modelWeights.isEmpty()) {
-      throw new ModelException("Model " + name + " doesn't contain any weights");
-    }
-
-    // List<Feature> features = getFeatures(); // model features
     featureToWeight = new float[features.size()];
 
-    for (int i = 0; i < features.size(); ++i) {
-      final String key = features.get(i).getName();
-      if (!modelWeights.containsKey(key)) {
-        throw new ModelException("no weight for feature " + key);
+    if (modelWeights != null) {
+      for (int i = 0; i < features.size(); ++i) {
+        final String key = features.get(i).getName();
+        featureToWeight[i] = modelWeights.getOrDefault(key, defaultWeight).floatValue();
       }
-      featureToWeight[i] = modelWeights.get(key).floatValue();
+    } else {
+      for (int i = 0; i < features.size(); ++i) {
+        featureToWeight[i] = defaultWeight.floatValue();
+      }
     }
   }
 
@@ -90,4 +87,19 @@ public class RankSVMModel extends LTRScoringModel {
     return Explanation.match(finalScore, toString()
         + " model applied to features, sum of:", details);
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder(getClass().getSimpleName());
+    sb.append("(name=").append(getName());
+    sb.append(",featureWeights=[");
+    for (int ii = 0; ii < features.size(); ++ii) {
+      if (ii>0) sb.append(',');
+      final String key = features.get(ii).getName();
+      sb.append(key).append('=').append(featureToWeight[ii]);
+    }
+    sb.append("])");
+    return sb.toString();
+  }
+
 }
