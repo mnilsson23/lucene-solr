@@ -205,7 +205,7 @@ public class TestRerankBase extends RestTestBase {
     sb.append("\"name\":").append('"').append(name).append('"').append(",\n");
     sb.append("\"store\":").append('"').append(fstore).append('"')
         .append(",\n");
-    sb.append("\"type\":").append('"').append(type).append('"').append(",\n");
+    sb.append("\"class\":").append('"').append(type).append('"').append(",\n");
     sb.append("\"features\":").append('[');
     for (final String feature : features) {
       sb.append("\n\t{ ");
@@ -230,7 +230,7 @@ public class TestRerankBase extends RestTestBase {
     sb.append("\"name\":").append('"').append(name).append('"').append(",\n");
     sb.append("\"store\":").append('"').append(fstore).append('"')
         .append(",\n");
-    sb.append("\"type\":").append('"').append(type).append('"');
+    sb.append("\"class\":").append('"').append(type).append('"');
     if (params != null) {
       sb.append(",\n");
       sb.append("\"params\":").append(params);
