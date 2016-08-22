@@ -133,7 +133,7 @@ public class SolrFeature extends Feature {
           for (String fq : fqs) {
             if ((fq != null) && (fq.trim().length() != 0)) {
               fq = macroExpander.expand(fq);
-              final QParser fqp = QParser.getParser(fq, null, req);
+              final QParser fqp = QParser.getParser(fq, req);
               final Query filterQuery = fqp.getQuery();
               if (filterQuery != null) {
                 queryAndFilters.add(filterQuery);
@@ -142,7 +142,7 @@ public class SolrFeature extends Feature {
           }
         }
 
-        final QParser parser = QParser.getParser(solrQuery, null, req);
+        final QParser parser = QParser.getParser(solrQuery, req);
         query = parser.parse();
 
         // Query can be null if there was no input to parse, for instance if you
