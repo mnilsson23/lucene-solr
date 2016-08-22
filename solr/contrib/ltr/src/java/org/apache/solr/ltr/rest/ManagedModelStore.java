@@ -35,8 +35,8 @@ import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.ranking.FilterFeature;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.FeatureException;
+import org.apache.solr.ltr.util.LTRUtils;
 import org.apache.solr.ltr.util.ModelException;
-import org.apache.solr.ltr.util.NamedParams;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.rest.BaseSolrResource;
 import org.apache.solr.rest.ManagedResource;
@@ -146,7 +146,6 @@ public class ManagedModelStore extends ManagedResource implements
     final Object modelStoreObj = map.get(CommonLTRParams.MODEL_FEATURE_STORE);
     final String featureStoreName = (modelStoreObj == null) ? CommonLTRParams.DEFAULT_FEATURE_STORE_NAME
         : (String) modelStoreObj;
-    NamedParams params = null;
     final FeatureStore fstore = featureStores.getFeatureStore(featureStoreName);
     if (!map.containsKey(CommonLTRParams.MODEL_FEATURE_LIST)) {
       // check if the model has a list of features to be used for computing the
@@ -174,11 +173,7 @@ public class ManagedModelStore extends ManagedResource implements
       }
     }
 
-    if (map.containsKey(CommonLTRParams.MODEL_PARAMS)) {
-      final Map<String,Object> paramsMap = (Map<String,Object>) map
-          .get(CommonLTRParams.MODEL_PARAMS);
-      params = new NamedParams(paramsMap);
-    }
+    final Map<String,Object> params = LTRUtils.createParams(map);
 
     final String type = (String) map.get(CommonLTRParams.MODEL_CLASS);
     LTRScoringAlgorithm meta = null;
@@ -188,7 +183,7 @@ public class ManagedModelStore extends ManagedResource implements
           type,
           LTRScoringAlgorithm.class,
           new String[0], // no sub packages
-          new Class[] { String.class, List.class, String.class, List.class, NamedParams.class },
+          new Class[] { String.class, List.class, String.class, List.class, Map.class },
           new Object[] { name, features, featureStoreName, fstore.getFeatures(), params });
     } catch (final Exception e) {
       throw new ModelException("Model type does not exist " + type, e);

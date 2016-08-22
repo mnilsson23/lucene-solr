@@ -33,8 +33,8 @@ import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.feature.norm.impl.IdentityNormalizer;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.FeatureException;
+import org.apache.solr.ltr.util.LTRUtils;
 import org.apache.solr.ltr.util.MacroExpander;
-import org.apache.solr.ltr.util.NamedParams;
 import org.apache.solr.request.SolrQueryRequest;
 
 /**
@@ -46,7 +46,7 @@ public abstract class Feature extends Query {
   protected int id;
 
   @Deprecated
-  private NamedParams params = NamedParams.EMPTY;
+  private Map<String,Object> params = LTRUtils.EMPTY_MAP;
 
 
   /**
@@ -59,7 +59,7 @@ public abstract class Feature extends Query {
    *          be used to directly access the feature in the global list of
    *          features.
    */
-  public void init(String name, NamedParams params, int id)
+  public void init(String name, Map<String,Object>  params, int id)
       throws FeatureException {
     this.name = name;
     this.params = params;
