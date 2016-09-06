@@ -127,60 +127,121 @@ public class TestLambdaMARTModel extends TestRerankBase {
     System.out.println(restTestHarness.query("/query" + query.toQueryString()));
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoParams() throws Exception {
-    createModelFromFiles("lambdamart_model_no_params.json",
-        "lambdamart_features.json");
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_params.json",
+              "lambdamart_features.json");
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
 
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoTrees() throws Exception {
-    createModelFromFiles("lambdamart_model_no_trees.json",
-        "lambdamart_features.json");
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_trees.json",
+            "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoWeight() throws Exception {
-    createModelFromFiles("lambdamart_model_no_weight.json",
-        "lambdamart_features.json");
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_weight.json",
+            "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoTree() throws Exception {
-    createModelFromFiles("lambdamart_model_no_tree.json",
-        "lambdamart_features.json");
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_tree.json",
+            "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
-  @Test(expected = SolrException.class)
+  @Test
   public void lambdaMartTestNoFeatures() throws Exception {
-    createModelFromFiles("lambdamart_model_no_features.json",
-        "lambdamart_features.json");
+    final SolrException expectedException = 
+        new SolrException(SolrException.ErrorCode.BAD_REQUEST,
+            "Missing mandatory field features");
+    try {
+        createModelFromFiles("lambdamart_model_no_features.json",
+            "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (SolrException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoRight() throws Exception {
-    createModelFromFiles("lambdamart_model_no_right.json",
-        "lambdamart_features.json");
-
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_right.json",
+            "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoLeft() throws Exception {
-    createModelFromFiles("lambdamart_model_no_left.json",
-        "lambdamart_features.json");
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_left.json",
+            "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoThreshold() throws Exception {
-    createModelFromFiles("lambdamart_model_no_threshold.json",
-        "lambdamart_features.json");
-
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_threshold.json",
+            "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
-  @Test(expected = ModelException.class)
+  @Test
   public void lambdaMartTestNoFeature() throws Exception {
-    createModelFromFiles("lambdamart_model_no_feature.json",
-        "lambdamart_features.json");
+    final ModelException expectedException = 
+        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+    try {
+        createModelFromFiles("lambdamart_model_no_feature.json",
+              "lambdamart_features.json");
+        fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 }

@@ -24,6 +24,7 @@ import org.apache.solr.ltr.feature.impl.OriginalScoreFeature;
 import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.rest.ManagedFeatureStore;
 import org.apache.solr.ltr.util.FeatureException;
+import org.apache.solr.ltr.util.ModelException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -58,14 +59,20 @@ public class TestFeatureMetadata extends TestRerankBase {
         .getClass().getCanonicalName());
   }
 
-  @Test(expected = FeatureException.class)
-  public void getInvalidInstanceTest() throws FeatureException
+  @Test
+  public void getInvalidInstanceTest()
   {
-    final Map<String,Object> map = new HashMap<String,Object>();
-    map.put(Feature.NAME_KEY, "test");
-    map.put(Feature.CLASS_KEY, "org.apache.solr.ltr.feature.LOLFeature");
-    store.addFeature(map, "testFstore2");
-
+    final FeatureException expectedException = 
+        new FeatureException("Error loading class 'org.apache.solr.ltr.feature.LOLFeature'");
+    try {
+      final Map<String,Object> map = new HashMap<String,Object>();
+      map.put(Feature.NAME_KEY, "test");
+      map.put(Feature.CLASS_KEY, "org.apache.solr.ltr.feature.LOLFeature");
+      store.addFeature(map, "testFstore2");
+      fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (FeatureException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
   
 }
