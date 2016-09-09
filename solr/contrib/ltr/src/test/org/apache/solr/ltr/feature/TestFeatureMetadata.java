@@ -24,7 +24,8 @@ import org.apache.solr.ltr.feature.impl.OriginalScoreFeature;
 import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.rest.ManagedFeatureStore;
 import org.apache.solr.ltr.util.FeatureException;
-import org.apache.solr.ltr.util.ModelException;
+import org.apache.solr.common.SolrException;
+import org.apache.solr.common.SolrException.ErrorCode;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -49,8 +50,8 @@ public class TestFeatureMetadata extends TestRerankBase {
   {
 
     final Map<String,Object> map = new HashMap<String,Object>();
-    map.put(Feature.NAME_KEY, "test");
-    map.put(Feature.CLASS_KEY, OriginalScoreFeature.class.getCanonicalName());
+    map.put(ManagedFeatureStore.NAME_KEY, "test");
+    map.put(ManagedFeatureStore.CLASS_KEY, OriginalScoreFeature.class.getCanonicalName());
     store.addFeature(map, "testFstore");
     final Feature feature = store.getFeatureStore("testFstore").get("test");
     assertNotNull(feature);
@@ -62,15 +63,16 @@ public class TestFeatureMetadata extends TestRerankBase {
   @Test
   public void getInvalidInstanceTest()
   {
-    final FeatureException expectedException = 
-        new FeatureException("Error loading class 'org.apache.solr.ltr.feature.LOLFeature'");
+    final SolrException expectedException = 
+        new SolrException(ErrorCode.BAD_REQUEST,
+            "Error loading class 'org.apache.solr.ltr.feature.LOLFeature'");
     try {
       final Map<String,Object> map = new HashMap<String,Object>();
-      map.put(Feature.NAME_KEY, "test");
-      map.put(Feature.CLASS_KEY, "org.apache.solr.ltr.feature.LOLFeature");
+      map.put(ManagedFeatureStore.NAME_KEY, "test");
+      map.put(ManagedFeatureStore.CLASS_KEY, "org.apache.solr.ltr.feature.LOLFeature");
       store.addFeature(map, "testFstore2");
       fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (FeatureException actualException) {
+    } catch (SolrException actualException) {
       assertEquals(expectedException.toString(), actualException.toString());
     }
   }
