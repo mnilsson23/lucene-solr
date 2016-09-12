@@ -103,11 +103,9 @@ public class LTRCollector extends TopDocsCollector {
       if (howMany > reRankDocs) {
         howMany = reRankDocs;
       }
-
       final TopDocs mainDocs = mainCollector.topDocs(0, reRankDocs);
       TopDocs topRerankDocs = reRankRescorer.rescore(searcher,
           mainDocs, howMany);
-
       if (boostedPriority != null) {
         final SolrRequestInfo info = SolrRequestInfo.getRequestInfo();
         Map requestContext = null;
@@ -125,7 +123,6 @@ public class LTRCollector extends TopDocsCollector {
         System.arraycopy(topRerankDocs.scoreDocs, 0, scoreDocs, 0, howMany);
         topRerankDocs.scoreDocs = scoreDocs;
       }
-
       return topRerankDocs;
 
     } catch (final Exception e) {

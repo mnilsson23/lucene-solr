@@ -36,6 +36,7 @@ import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.SyntaxError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.solr.ltr.ranking.LTRThreadModule;
 
 /**
  * Plug into solr a rerank model.
@@ -50,7 +51,12 @@ public class LTRQParserPlugin extends QParserPlugin {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   @Override
-  public void init(@SuppressWarnings("rawtypes") NamedList args) {}
+  public void init(@SuppressWarnings("rawtypes") NamedList args) {
+    int maxThreads  = LTRUtils.getInt(args.get("LTRMaxThreads"), LTRThreadModule.DEFAULT_MAX_THREADS, "LTRMaxThreads");
+    int maxQueryThreads = LTRUtils.getInt(args.get("LTRMaxQueryThreads"), LTRThreadModule.DEFAULT_MAX_QUERYTHREADS, "LTRMaxQueryThreads");
+    LTRThreadModule.setThreads(maxThreads, maxQueryThreads);
+    LTRThreadModule.initSemaphore();
+  }
 
   @Override
   public QParser createParser(String qstr, SolrParams localParams,
@@ -78,9 +84,6 @@ public class LTRQParserPlugin extends QParserPlugin {
         throw new SolrException(SolrException.ErrorCode.BAD_REQUEST,
             "Must provide model in the request");
       }
-      
-      
-      
      
       final LTRScoringAlgorithm meta = mr.getModel(modelName);
       if (meta == null) {
@@ -92,8 +95,6 @@ public class LTRQParserPlugin extends QParserPlugin {
       final String fvStoreName = (String) req.getContext().get(CommonLTRParams.FV_STORE);
       // Check if features are requested and if the model feature store and feature-transform feature store are the same
       final boolean featuresRequestedFromSameStore = (extractFeatures != null && (modelFeatureStoreName.equals(fvStoreName) || fvStoreName == null) ) ? extractFeatures.booleanValue():false;
-      log.info("params: {} localParams: {} fl = {} featuresRequested {}", params.toString(), localParams.toString(), params.get(CommonParams.FL), featuresRequestedFromSameStore);
-      
       
       final ModelQuery reRankModel = new ModelQuery(meta, featuresRequestedFromSameStore);
 
@@ -125,8 +126,6 @@ public class LTRQParserPlugin extends QParserPlugin {
       // External features
       final Map<String,String[]> externalFeatureInfo = LTRUtils.extractEFIParams(localParams);
       reRankModel.setExternalFeatureInfo(externalFeatureInfo);
-
-      log.info("Reranking {} docs using model {}", reRankDocs, reRankModel.getMetadata().getName());
       reRankModel.setRequest(req);
 
       return new LTRQuery(reRankModel, reRankDocs);
