@@ -130,64 +130,69 @@ public class TestLambdaMARTModel extends TestRerankBase {
   @Test
   public void lambdaMartTestNoParams() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel doesn't contain any params");
     try {
         createModelFromFiles("lambdamart_model_no_params.json",
               "lambdamart_features.json");
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestNoParams failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
 
   }
 
   @Test
-  public void lambdaMartTestNoTrees() throws Exception {
+  public void lambdaMartTestEmptyParams() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel doesn't contain any params");
     try {
         createModelFromFiles("lambdamart_model_no_trees.json",
             "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestEmptyParams failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
   }
 
   @Test
   public void lambdaMartTestNoWeight() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel tree doesn't contain a weight");
     try {
         createModelFromFiles("lambdamart_model_no_weight.json",
             "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestNoWeight failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
   }
 
   @Test
   public void lambdaMartTestNoTree() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel tree doesn't contain a tree");
     try {
         createModelFromFiles("lambdamart_model_no_tree.json",
             "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestNoTree failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
   }
 
   @Test
-  public void lambdaMartTestNoFeatures() throws Exception {
+  public void lambdaMartTestNoFeaturesSpecified() throws Exception {
     final SolrException expectedException = 
         new SolrException(SolrException.ErrorCode.BAD_REQUEST,
             "Missing mandatory field features");
     try {
         createModelFromFiles("lambdamart_model_no_features.json",
             "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
+        fail("lambdaMartTestNoFeaturesSpecified failed to throw exception: "+expectedException);
     } catch (SolrException actualException) {
       assertEquals(expectedException.toString(), actualException.toString());
     }
@@ -196,52 +201,56 @@ public class TestLambdaMARTModel extends TestRerankBase {
   @Test
   public void lambdaMartTestNoRight() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel tree node is missing right");
     try {
         createModelFromFiles("lambdamart_model_no_right.json",
             "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestNoRight failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
   }
 
   @Test
   public void lambdaMartTestNoLeft() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel tree node is missing left");
     try {
         createModelFromFiles("lambdamart_model_no_left.json",
             "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestNoLeft failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
   }
 
   @Test
   public void lambdaMartTestNoThreshold() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel tree node is missing threshold");
     try {
         createModelFromFiles("lambdamart_model_no_threshold.json",
             "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestNoThreshold failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
   }
 
   @Test
-  public void lambdaMartTestNoFeature() throws Exception {
+  public void lambdaMartTestMissingTreeFeature() throws Exception {
     final ModelException expectedException = 
-        new ModelException("Model type does not exist org.apache.solr.ltr.ranking.LambdaMARTModel");
+        new ModelException("LambdaMARTModel tree node is missing feature");
     try {
         createModelFromFiles("lambdamart_model_no_feature.json",
               "lambdamart_features.json");
-        fail("unexpectedly got here instead of catching "+expectedException);
-    } catch (ModelException actualException) {
-      assertEquals(expectedException.toString(), actualException.toString());
+        fail("lambdaMartTestMissingTreeFeature failed to throw exception: "+expectedException);
+    } catch (Exception actualException) {
+      Throwable rootError = getRootCause(actualException);
+      assertEquals(expectedException.toString(), rootError.toString());
     }
   }
 }

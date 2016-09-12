@@ -51,10 +51,10 @@ public class TestValueFeature extends TestRerankBase {
   @Test
   public void testValueFeatureWithEmptyValue() throws Exception {
     final RuntimeException expectedException = 
-        new RuntimeException("mismatch: '0'!='400' @ responseHeader/status");
+        new RuntimeException("mismatch: '0'!='500' @ responseHeader/status");
     try {
         loadFeature("c2", ValueFeature.class.getCanonicalName(), "{\"value\":\"\"}");
-        fail("unexpectedly got here instead of catching "+expectedException);
+        fail("testValueFeatureWithEmptyValue failed to throw exception: "+expectedException);
     } catch (RuntimeException actualException) {
       assertEquals(expectedException.toString(), actualException.toString());
     }
@@ -63,11 +63,11 @@ public class TestValueFeature extends TestRerankBase {
   @Test
   public void testValueFeatureWithWhitespaceValue() throws Exception {
     final RuntimeException expectedException = 
-        new RuntimeException("mismatch: '0'!='400' @ responseHeader/status");
+        new RuntimeException("mismatch: '0'!='500' @ responseHeader/status");
     try {
         loadFeature("c2", ValueFeature.class.getCanonicalName(),
               "{\"value\":\" \"}");
-        fail("unexpectedly got here instead of catching "+expectedException);
+        fail("testValueFeatureWithWhitespaceValue failed to throw exception: "+expectedException);
     } catch (RuntimeException actualException) {
       assertEquals(expectedException.toString(), actualException.toString());
     }
