@@ -171,13 +171,13 @@ public class TestLambdaMARTModel extends TestRerankBase {
   }
 
   @Test
-  public void lambdaMartTestNoTree() throws Exception {
+  public void lambdaMartTestTreesParamDoesNotContatinTree() throws Exception {
     final ModelException expectedException = 
         new ModelException("LambdaMARTModel tree doesn't contain a tree");
     try {
         createModelFromFiles("lambdamart_model_no_tree.json",
             "lambdamart_features.json");
-        fail("lambdaMartTestNoTree failed to throw exception: "+expectedException);
+        fail("lambdaMartTestTreesParamDoesNotContatinTree failed to throw exception: "+expectedException);
     } catch (Exception actualException) {
       Throwable rootError = getRootCause(actualException);
       assertEquals(expectedException.toString(), rootError.toString());
