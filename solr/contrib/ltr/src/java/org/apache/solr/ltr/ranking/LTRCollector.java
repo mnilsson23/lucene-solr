@@ -54,23 +54,26 @@ public class LTRCollector extends TopDocsCollector {
   private TopDocsCollector mainCollector;
   private final IndexSearcher searcher;
   private final int reRankDocs;
+  private final int length;
   private final Map<BytesRef,Integer> boostedPriority;
 
   @SuppressWarnings("unchecked")
-  public LTRCollector(int reRankDocs, Rescorer reRankRescorer, QueryCommand cmd,
+  public LTRCollector(int reRankDocs, int length,
+      Rescorer reRankRescorer, QueryCommand cmd,
       IndexSearcher searcher, Map<BytesRef,Integer> boostedPriority)
       throws IOException {
     super(null);
     this.reRankRescorer = reRankRescorer;
     this.reRankDocs = reRankDocs;
+    this.length = length;
     this.boostedPriority = boostedPriority;
     Sort sort = cmd.getSort();
     if (sort == null) {
-      mainCollector = TopScoreDocCollector.create(this.reRankDocs);
+      mainCollector = TopScoreDocCollector.create(Math.max(reRankDocs, length));
     } else {
       sort = sort.rewrite(searcher);
-      mainCollector = TopFieldCollector.create(sort, this.reRankDocs, false,
-          true, true);
+      mainCollector = TopFieldCollector.create(sort, Math.max(reRankDocs, length),
+          false, true, true);
     }
     this.searcher = searcher;
   }
@@ -100,36 +103,70 @@ public class LTRCollector extends TopDocsCollector {
   @Override
   public TopDocs topDocs(int start, int howMany) {
     try {
-      if (howMany > reRankDocs) {
-        howMany = reRankDocs;
+      // Use length instead of howMany for caching purposes
+      TopDocs mainDocs = mainCollector.topDocs(0,  Math.max(reRankDocs, length));
+
+      if(mainDocs.totalHits == 0 || mainDocs.scoreDocs.length == 0) {
+        return mainDocs;
       }
-      final TopDocs mainDocs = mainCollector.topDocs(0, reRankDocs);
-      TopDocs topRerankDocs = reRankRescorer.rescore(searcher,
-          mainDocs, howMany);
-      if (boostedPriority != null) {
-        final SolrRequestInfo info = SolrRequestInfo.getRequestInfo();
+
+      ScoreDoc[] mainScoreDocs = mainDocs.scoreDocs;      
+
+      // Create the array for the reRankScoreDocs.
+      // TODO: Shouldn't this be reRankDocs size?  If so it is broken in 
+      //       Solr's ReRankQuery as well
+      ScoreDoc[] reRankScoreDocs = new ScoreDoc[Math.min(mainScoreDocs.length, reRankDocs)];
+
+      // Copy the initial results into the reRankScoreDocs array.
+      // TODO: Any way to avoid the copy for truncation to generate less garbage, like using
+      //       a length variable instead of array.length below?  
+      //       This would need to be changed in Solr's ReRankQuery too
+      System.arraycopy(mainScoreDocs, 0, reRankScoreDocs, 0, reRankScoreDocs.length);
+      
+      mainDocs.scoreDocs = reRankScoreDocs;
+      
+      TopDocs rescoredDocs = reRankRescorer.rescore(
+          searcher, mainDocs, mainDocs.scoreDocs.length);
+      
+      if(boostedPriority != null) {
+        SolrRequestInfo info = SolrRequestInfo.getRequestInfo();
         Map requestContext = null;
-        if (info != null) {
+        if(info != null) {
           requestContext = info.getReq().getContext();
         }
 
-        final IntIntHashMap boostedDocs = QueryElevationComponent.getBoostDocs(
-            (SolrIndexSearcher) searcher, boostedPriority, requestContext);
+        IntIntHashMap boostedDocs = QueryElevationComponent.getBoostDocs((SolrIndexSearcher)searcher, boostedPriority, requestContext);
 
-        Arrays.sort(topRerankDocs.scoreDocs, new BoostedComp(boostedDocs,
-            mainDocs.scoreDocs, topRerankDocs.getMaxScore()));
-
-        final ScoreDoc[] scoreDocs = new ScoreDoc[howMany];
-        System.arraycopy(topRerankDocs.scoreDocs, 0, scoreDocs, 0, howMany);
-        topRerankDocs.scoreDocs = scoreDocs;
+        Arrays.sort(rescoredDocs.scoreDocs, new BoostedComp(boostedDocs, mainDocs.scoreDocs, rescoredDocs.getMaxScore()));
       }
-      return topRerankDocs;
 
-    } catch (final Exception e) {
+      //Lower howMany to return if we've collected fewer documents.
+      howMany = Math.min(howMany, mainScoreDocs.length);
+
+      if(howMany == rescoredDocs.scoreDocs.length) {
+        return rescoredDocs; // Just return the rescoredDocs
+      } else if(howMany > rescoredDocs.scoreDocs.length) {
+        //We need to return more then we've reRanked, so create the combined page.
+        ScoreDoc[] scoreDocs = new ScoreDoc[howMany];
+        //lay down the initial docs
+        System.arraycopy(mainScoreDocs, 0, scoreDocs, 0, scoreDocs.length);
+        //overlay the rescoreds docs
+        System.arraycopy(rescoredDocs.scoreDocs, 0, scoreDocs, 0, rescoredDocs.scoreDocs.length);
+        rescoredDocs.scoreDocs = scoreDocs;
+        return rescoredDocs;
+      } else {
+        //We've rescored more then we need to return.
+        ScoreDoc[] scoreDocs = new ScoreDoc[howMany];
+        System.arraycopy(rescoredDocs.scoreDocs, 0, scoreDocs, 0, howMany);
+        rescoredDocs.scoreDocs = scoreDocs;
+        return rescoredDocs;
+      }
+    } catch (Exception e) {
       throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, e);
     }
   }
 
+  // TODO: Replace this with a shared copy for all Solr ReRankQueries
   public class BoostedComp implements Comparator {
     IntFloatHashMap boostedMap;
 

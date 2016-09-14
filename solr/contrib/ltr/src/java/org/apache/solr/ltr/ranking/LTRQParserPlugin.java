@@ -22,7 +22,6 @@ import java.util.Map;
 import org.apache.lucene.search.Query;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
-import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
@@ -90,6 +89,7 @@ public class LTRQParserPlugin extends QParserPlugin {
         throw new SolrException(ErrorCode.BAD_REQUEST,
             "cannot find " + CommonLTRParams.MODEL + " " + modelName);
       }
+
       final String modelFeatureStoreName = meta.getFeatureStoreName();
       final Boolean extractFeatures = (Boolean) req.getContext().get(CommonLTRParams.LOG_FEATURES_QUERY_PARAM);
       final String fvStoreName = (String) req.getContext().get(CommonLTRParams.FV_STORE);
@@ -97,13 +97,6 @@ public class LTRQParserPlugin extends QParserPlugin {
       final boolean featuresRequestedFromSameStore = (extractFeatures != null && (modelFeatureStoreName.equals(fvStoreName) || fvStoreName == null) ) ? extractFeatures.booleanValue():false;
       
       final ModelQuery reRankModel = new ModelQuery(meta, featuresRequestedFromSameStore);
-
-      int reRankDocs = localParams.getInt(CommonLTRParams.RERANK_DOCS,
-          CommonLTRParams.DEFAULT_RERANK_DOCS);
-      final int start = params.getInt(CommonParams.START,
-          CommonParams.START_DEFAULT);
-      final int rows = params.getInt(CommonParams.ROWS,
-          CommonParams.ROWS_DEFAULT);
 
       // Enable the feature vector caching if we are extracting features, and the features
       // we requested are the same ones we are reranking with 
@@ -117,11 +110,9 @@ public class LTRQParserPlugin extends QParserPlugin {
       }
       req.getContext().put(CommonLTRParams.MODEL, reRankModel);
 
-      if ((start + rows) > reRankDocs) {
-        throw new SolrException(ErrorCode.BAD_REQUEST,
-            "Requesting more documents than being reranked.");
-      }
-      reRankDocs = Math.max(start + rows, reRankDocs);
+      int reRankDocs = localParams.getInt(CommonLTRParams.RERANK_DOCS,
+          CommonLTRParams.DEFAULT_RERANK_DOCS);
+      reRankDocs = Math.max(1, reRankDocs);
 
       // External features
       final Map<String,String[]> externalFeatureInfo = LTRUtils.extractEFIParams(localParams);
