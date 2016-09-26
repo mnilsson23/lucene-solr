@@ -24,7 +24,7 @@ import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.log.FeatureLogger;
 import org.apache.solr.ltr.rest.ManagedModelStore;
 import org.apache.solr.ltr.util.CommonLTRParams;
@@ -84,7 +84,7 @@ public class LTRQParserPlugin extends QParserPlugin {
             "Must provide model in the request");
       }
      
-      final LTRScoringAlgorithm meta = mr.getModel(modelName);
+      final LTRScoringModel meta = mr.getModel(modelName);
       if (meta == null) {
         throw new SolrException(ErrorCode.BAD_REQUEST,
             "cannot find " + CommonLTRParams.MODEL + " " + modelName);

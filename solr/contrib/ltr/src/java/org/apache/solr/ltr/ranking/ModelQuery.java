@@ -44,7 +44,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.log.FeatureLogger;
 import org.apache.solr.ltr.ranking.Feature.FeatureWeight;
 import org.apache.solr.ltr.ranking.Feature.FeatureWeight.FeatureScorer;
@@ -55,12 +55,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The ranking query that is run, reranking results using the
- * LTRScoringAlgorithm algorithm
+ * LTRScoringModel algorithm
  */
 public class ModelQuery extends Query {
 
   // contains a description of the model
-  protected LTRScoringAlgorithm meta;
+  protected LTRScoringModel meta;
   // feature logger to output the features.
   protected FeatureLogger<?> fl;
   // Map of external parameters, such as query intent, that can be used by
@@ -74,17 +74,17 @@ public class ModelQuery extends Query {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private Semaphore querySemaphore; // limits the number of threads per query, so that multiple requests can be serviced simultaneously
 
-  public ModelQuery(LTRScoringAlgorithm meta) {
+  public ModelQuery(LTRScoringModel meta) {
     this(meta, false);
   }
 
-  public ModelQuery(LTRScoringAlgorithm meta, boolean extractAllFeatures) {
+  public ModelQuery(LTRScoringModel meta, boolean extractAllFeatures) {
     this.meta = meta;
     this.extractAllFeatures = extractAllFeatures; 
     querySemaphore = new Semaphore(LTRThreadModule.getMaxQueryThreads());
   }
 
-  public LTRScoringAlgorithm getMetadata() {
+  public LTRScoringModel getMetadata() {
     return meta;
   }
 

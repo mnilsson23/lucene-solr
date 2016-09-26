@@ -29,13 +29,13 @@ import org.apache.solr.ltr.util.ModelException;
  */
 public class ModelStore {
 
-  private final Map<String,LTRScoringAlgorithm> availableModels;
+  private final Map<String,LTRScoringModel> availableModels;
 
   public ModelStore() {
     availableModels = new HashMap<>();
   }
 
-  public synchronized LTRScoringAlgorithm getModel(String name) {
+  public synchronized LTRScoringModel getModel(String name) {
     return availableModels.get(name);
   }
 
@@ -51,9 +51,9 @@ public class ModelStore {
     return availableModels.size();
   }
   
-  public List<LTRScoringAlgorithm> getModels() {
-    final List<LTRScoringAlgorithm> availableModelsValues = 
-        new ArrayList<LTRScoringAlgorithm>(availableModels.values());
+  public List<LTRScoringModel> getModels() {
+    final List<LTRScoringModel> availableModelsValues = 
+        new ArrayList<LTRScoringModel>(availableModels.values());
     return Collections.unmodifiableList(availableModelsValues);
   }
 
@@ -66,7 +66,7 @@ public class ModelStore {
     availableModels.remove(modelName);
   }
 
-  public synchronized void addModel(LTRScoringAlgorithm modeldata)
+  public synchronized void addModel(LTRScoringModel modeldata)
       throws ModelException {
     final String name = modeldata.getName();
 

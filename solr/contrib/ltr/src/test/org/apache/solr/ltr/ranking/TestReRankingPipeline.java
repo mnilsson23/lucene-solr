@@ -43,7 +43,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.core.SolrResourceLoader;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.feature.impl.FieldValueFeature;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.feature.norm.impl.IdentityNormalizer;
@@ -82,7 +82,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
     return features;
   }
 
-  private class MockModel extends LTRScoringAlgorithm {
+  private class MockModel extends LTRScoringModel {
 
     public MockModel(String name, List<Feature> features,
         List<Normalizer> norms,

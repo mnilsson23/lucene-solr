@@ -31,7 +31,7 @@ import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.feature.FeatureStore;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.feature.ModelStore;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.feature.norm.impl.IdentityNormalizer;
@@ -98,7 +98,7 @@ public class ManagedModelStore extends ManagedResource implements
       final List<Map<String,Object>> up = (List<Map<String,Object>>) managedData;
       for (final Map<String,Object> u : up) {
         try {
-          final LTRScoringAlgorithm algo = makeLTRScoringAlgorithm(u);
+          final LTRScoringModel algo = makeLTRScoringModel(u);
           addModel(algo);
         } catch (final ModelException e) {
           throw new SolrException(ErrorCode.BAD_REQUEST, e);
@@ -108,7 +108,7 @@ public class ManagedModelStore extends ManagedResource implements
   }
 
   @SuppressWarnings("unchecked")
-  public LTRScoringAlgorithm makeLTRScoringAlgorithm(String json)
+  public LTRScoringModel makeLTRScoringModel(String json)
       throws ModelException {
     Object parsedJson = null;
     try {
@@ -116,10 +116,10 @@ public class ManagedModelStore extends ManagedResource implements
     } catch (final IOException ioExc) {
       throw new ModelException("ObjectBuilder failed parsing json", ioExc);
     }
-    return makeLTRScoringAlgorithm((Map<String,Object>) parsedJson);
+    return makeLTRScoringModel((Map<String,Object>) parsedJson);
   }
   
-  private void checkFeatureValidity(LTRScoringAlgorithm meta) throws ModelException {
+  private void checkFeatureValidity(LTRScoringModel meta) throws ModelException {
     final List<Feature> featureList = meta.getFeatures();
     final String modelName = meta.getName();
     if (featureList.isEmpty()) {
@@ -138,7 +138,7 @@ public class ManagedModelStore extends ManagedResource implements
   }
 
   @SuppressWarnings("unchecked")
-  public LTRScoringAlgorithm makeLTRScoringAlgorithm(Map<String,Object> map)
+  public LTRScoringModel makeLTRScoringModel(Map<String,Object> map)
       throws ModelException {
     final String name = (String) map.get(CommonLTRParams.MODEL_NAME);
     String featureStoreName = (String) map.get(CommonLTRParams.MODEL_FEATURE_STORE);
@@ -177,12 +177,12 @@ public class ManagedModelStore extends ManagedResource implements
     final Map<String,Object> params = (Map<String,Object>) map.get(CommonLTRParams.MODEL_PARAMS);
 
     final String type = (String) map.get(CommonLTRParams.MODEL_CLASS);
-    LTRScoringAlgorithm meta = null;
+    LTRScoringModel meta = null;
     try {
       // create an instance of the model
       meta = solrResourceLoader.newInstance(
           type,
-          LTRScoringAlgorithm.class,
+          LTRScoringModel.class,
           new String[0], // no sub packages
           new Class[] { String.class, List.class, List.class, String.class, List.class, Map.class },
           new Object[] { name, features, norms, featureStoreName, fstore.getFeatures(), params });
@@ -197,7 +197,7 @@ public class ManagedModelStore extends ManagedResource implements
 
 
 
-  public synchronized void addModel(LTRScoringAlgorithm meta) throws ModelException {
+  public synchronized void addModel(LTRScoringModel meta) throws ModelException {
     try {
       log.info("adding model {}", meta.getName());
       checkFeatureValidity(meta);
@@ -214,7 +214,7 @@ public class ManagedModelStore extends ManagedResource implements
       final List<Map<String,Object>> up = (List<Map<String,Object>>) updates;
       for (final Map<String,Object> u : up) {
         try {
-          final LTRScoringAlgorithm algo = makeLTRScoringAlgorithm(u);
+          final LTRScoringModel algo = makeLTRScoringModel(u);
           addModel(algo);
         } catch (final ModelException e) {
           throw new SolrException(ErrorCode.BAD_REQUEST, e);
@@ -225,7 +225,7 @@ public class ManagedModelStore extends ManagedResource implements
     if (updates instanceof Map) {
       final Map<String,Object> map = (Map<String,Object>) updates;
       try {
-        final LTRScoringAlgorithm algo = makeLTRScoringAlgorithm(map);
+        final LTRScoringModel algo = makeLTRScoringModel(map);
         addModel(algo);
       } catch (final ModelException e) {
         throw new SolrException(ErrorCode.BAD_REQUEST, e);
@@ -260,7 +260,7 @@ public class ManagedModelStore extends ManagedResource implements
         modelAsManagedResources(store));
   }
 
-  public LTRScoringAlgorithm getModel(String modelName) {
+  public LTRScoringModel getModel(String modelName) {
     // this function replicates getModelStore().getModel(modelName), but
     // it simplifies the testing (we can avoid to mock also a ModelStore).
     return store.getModel(modelName);
@@ -288,7 +288,7 @@ public class ManagedModelStore extends ManagedResource implements
    */
   private static List<Object> modelAsManagedResources(ModelStore store) {
     final List<Object> list = new ArrayList<>(store.size());
-    for (final LTRScoringAlgorithm modelmeta : store.getModels()) {
+    for (final LTRScoringModel modelmeta : store.getModels()) {
       final Map<String,Object> modelMap = new HashMap<>(5, 1.0f);
       modelMap.put((String)CommonLTRParams.MODEL_NAME, modelmeta.getName());
       modelMap.put((String)CommonLTRParams.MODEL_CLASS, modelmeta.getClass().getCanonicalName());

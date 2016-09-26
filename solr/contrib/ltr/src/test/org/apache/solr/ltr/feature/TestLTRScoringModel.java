@@ -34,7 +34,7 @@ import org.apache.solr.ltr.util.ModelException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestLTRScoringAlgorithm extends TestRerankBase {
+public class TestLTRScoringModel extends TestRerankBase {
 
   static ManagedModelStore store = null;
   static FeatureStore fstore = null;
@@ -61,12 +61,12 @@ public class TestLTRScoringAlgorithm extends TestRerankBase {
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     params.put("weights", weights);
-    final LTRScoringAlgorithm meta = new RankSVMModel("test1",
+    final LTRScoringModel meta = new RankSVMModel("test1",
         features, norms, "test", fstore.getFeatures(),
         params);
 
     store.addModel(meta);
-    final LTRScoringAlgorithm m = store.getModel("test1");
+    final LTRScoringModel m = store.getModel("test1");
     assertEquals(meta, m);
   }
 
@@ -80,7 +80,7 @@ public class TestLTRScoringAlgorithm extends TestRerankBase {
       final List<Normalizer> norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-      final LTRScoringAlgorithm meta = new RankSVMModel("test2",
+      final LTRScoringModel meta = new RankSVMModel("test2",
           features, norms, "test", fstore.getFeatures(), null);
       fail("unexpectedly got here instead of catching "+expectedException);
     } catch (ModelException actualException) {
@@ -105,11 +105,11 @@ public class TestLTRScoringAlgorithm extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringAlgorithm meta = new RankSVMModel("test3",
+      final LTRScoringModel meta = new RankSVMModel("test3",
           features, norms, "test", fstore.getFeatures(),
               params);
       store.addModel(meta);
-      final LTRScoringAlgorithm m = store.getModel("test3");
+      final LTRScoringModel m = store.getModel("test3");
       assertEquals(meta, m);
       store.addModel(meta);
       fail("unexpectedly got here instead of catching "+expectedException);
@@ -135,7 +135,7 @@ public class TestLTRScoringAlgorithm extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringAlgorithm meta = new RankSVMModel("test4",
+      final LTRScoringModel meta = new RankSVMModel("test4",
           features, norms, "test", fstore.getFeatures(),
               params);
       store.addModel(meta);
@@ -162,7 +162,7 @@ public class TestLTRScoringAlgorithm extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringAlgorithm meta = new RankSVMModel("test5",
+      final LTRScoringModel meta = new RankSVMModel("test5",
           features, norms, "test", fstore.getFeatures(),
               params);
       fail("unexpectedly got here instead of catching "+expectedException);
@@ -187,7 +187,7 @@ public class TestLTRScoringAlgorithm extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringAlgorithm meta = new RankSVMModel("test6",
+      final LTRScoringModel meta = new RankSVMModel("test6",
           features, norms, "test", fstore.getFeatures(),
           params);
       store.addModel(meta);
