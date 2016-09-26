@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.ltr.util;
+package org.apache.solr.ltr.feature;
 
-public class LTRException extends RuntimeException {
+public class FeatureException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
-  public LTRException(String message) {
+  public FeatureException(String message) {
     super(message);
   }
 
-  public LTRException(String message, Exception parent) {
-    super(message, parent);
+  public FeatureException(String message, Exception cause) {
+    super(message, cause);
   }
 
 }
