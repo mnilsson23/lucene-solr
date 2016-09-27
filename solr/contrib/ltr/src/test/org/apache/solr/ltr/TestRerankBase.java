@@ -39,7 +39,7 @@ import org.apache.solr.common.util.ContentStream;
 import org.apache.solr.common.util.ContentStreamBase;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.feature.FeatureException;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.feature.impl.ValueFeature;
 import org.apache.solr.ltr.feature.impl.ValueFeature.ValueFeatureWeight;
 import org.apache.solr.ltr.ranking.Feature;
@@ -311,7 +311,7 @@ public class TestRerankBase extends RestTestBase {
     fs.applyUpdatesToManagedData(parsedFeatureJson);
     ms.init(fs);
 
-    final LTRScoringAlgorithm meta = ms.makeLTRScoringAlgorithm(modelJson);
+    final LTRScoringModel meta = ms.makeLTRScoringModel(modelJson);
     ms.addModel(meta);
   }
 

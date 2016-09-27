@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Explanation;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.util.LTRUtils;
@@ -30,7 +30,7 @@ import org.apache.solr.ltr.util.LTRUtils;
 /**
  * a stubbed reranking model that will be used only for computing the features.
  **/
-public class LoggingModel extends LTRScoringAlgorithm {
+public class LoggingModel extends LTRScoringModel {
 
   final static String LOGGING_MODEL_NAME = "logging-model";
 

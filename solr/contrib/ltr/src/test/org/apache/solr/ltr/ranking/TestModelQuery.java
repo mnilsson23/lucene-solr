@@ -43,7 +43,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.core.SolrResourceLoader;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.feature.impl.ValueFeature;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.ranking.ModelQuery.FeatureInfo;
@@ -137,7 +137,7 @@ public class TestModelQuery extends LuceneTestCase {
         new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
     final Map<String,Object> modelParams = makeFeatureWeights(features);
 
-    final LTRScoringAlgorithm algorithm1 = new RankSVMModel(
+    final LTRScoringModel algorithm1 = new RankSVMModel(
         "testModelName",
         features, norms, "testStoreName", allFeatures, modelParams);
 
@@ -163,7 +163,7 @@ public class TestModelQuery extends LuceneTestCase {
     assertEquals(m1, m2);
     assertEquals(m1.hashCode(), m2.hashCode());
 
-    final LTRScoringAlgorithm algorithm2 = new RankSVMModel(
+    final LTRScoringModel algorithm2 = new RankSVMModel(
         "testModelName2",
         features, norms, "testStoreName", allFeatures, modelParams);
     final ModelQuery m3 = new ModelQuery(algorithm2);
@@ -171,7 +171,7 @@ public class TestModelQuery extends LuceneTestCase {
     assertFalse(m1.equals(m3));
     assertFalse(m1.hashCode() == m3.hashCode());
 
-    final LTRScoringAlgorithm algorithm3 = new RankSVMModel(
+    final LTRScoringModel algorithm3 = new RankSVMModel(
         "testModelName",
         features, norms, "testStoreName3", allFeatures, modelParams);
     final ModelQuery m4 = new ModelQuery(algorithm3);

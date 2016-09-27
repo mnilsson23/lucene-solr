@@ -31,7 +31,7 @@ import org.apache.solr.ltr.ranking.Feature;
  * Contains all the data needed for loading a model.
  */
 
-public abstract class LTRScoringAlgorithm {
+public abstract class LTRScoringModel {
 
   private final String name;
   private final String featureStoreName;
@@ -40,7 +40,7 @@ public abstract class LTRScoringAlgorithm {
   private final Map<String,Object> params;
   private final List<Normalizer> norms;
 
-  public LTRScoringAlgorithm(String name, List<Feature> features,
+  public LTRScoringModel(String name, List<Feature> features,
       List<Normalizer> norms,
       String featureStoreName, List<Feature> allFeatures,
       Map<String,Object> params) {
@@ -104,7 +104,7 @@ public abstract class LTRScoringAlgorithm {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final LTRScoringAlgorithm other = (LTRScoringAlgorithm) obj;
+    final LTRScoringModel other = (LTRScoringModel) obj;
     if (features == null) {
       if (other.features != null) {
         return false;

@@ -22,11 +22,11 @@ import java.util.Map;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Explanation;
-import org.apache.solr.ltr.feature.LTRScoringAlgorithm;
+import org.apache.solr.ltr.feature.LTRScoringModel;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.util.ModelException;
 
-public class RankSVMModel extends LTRScoringAlgorithm {
+public class RankSVMModel extends LTRScoringModel {
 
   protected float[] featureToWeight;
 

@@ -391,13 +391,13 @@ from the Extract features section above to do this. An example script has been i
 
 # Explanation of the core reranking logic
 An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQParserPlugin.java). The plugin will
-read from the request the model, an instance of [LTRScoringAlgorithm](solr/contrib/ltr/src/java/org/apache/solr/ltr/feature/LTRScoringAlgorithm.java),
+read from the request the model, an instance of [LTRScoringModel](solr/contrib/ltr/src/java/org/apache/solr/ltr/feature/LTRScoringModel.java),
 plus other parameters. The plugin will generate an [LTRQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQuery.java), a particular org.apache.solr.search. RankQuery.
 It wraps the original solr query for the first pass ranking, and uses the provided model in a
 [ModelQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/ModelQuery.java) to
 rescore and rerank the top documents.  The ModelQuery will take care of computing the values of all the
 [features](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/Feature.java) and then will delegate the final score
-generation to the LTRScoringAlgorithm.
+generation to the LTRScoringModel.
 
 # Speeding up the weight creation with threads
 About half the time for ranking is spent in the creation of weights for each feature used in ranking. If the number of features is significantly high (say, 500 or more), this increases the ranking overhead proportionally. To alleviate this problem, parallel weight creation is provided as a configurable option. In order to use this feature, the following lines need to be added to the solrconfig.xml
