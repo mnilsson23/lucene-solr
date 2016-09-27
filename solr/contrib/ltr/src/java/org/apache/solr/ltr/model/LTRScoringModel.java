@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.ltr.feature;
+package org.apache.solr.ltr.model;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Explanation;
+import org.apache.solr.ltr.feature.FeatureException;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.feature.norm.impl.IdentityNormalizer;
 import org.apache.solr.ltr.ranking.Feature;
@@ -180,7 +181,7 @@ public abstract class LTRScoringModel {
    *          Original score
    * @param featureExplanations
    *          Explanations for each feature calculation
-   * @return Explanation for the scoring of a doument
+   * @return Explanation for the scoring of a document
    */
   public abstract Explanation explain(LeafReaderContext context, int doc,
       float finalScore, List<Explanation> featureExplanations);

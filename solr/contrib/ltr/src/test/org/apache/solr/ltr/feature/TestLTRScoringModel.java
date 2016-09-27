@@ -27,6 +27,7 @@ import org.apache.solr.common.SolrException.ErrorCode;
 import org.apache.solr.ltr.TestRerankBase;
 import org.apache.solr.ltr.feature.norm.Normalizer;
 import org.apache.solr.ltr.feature.norm.impl.IdentityNormalizer;
+import org.apache.solr.ltr.model.LTRScoringModel;
 import org.apache.solr.ltr.model.ModelException;
 import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.ltr.ranking.RankSVMModel;

@@ -391,7 +391,7 @@ from the Extract features section above to do this. An example script has been i
 
 # Explanation of the core reranking logic
 An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQParserPlugin.java). The plugin will
-read from the request the model, an instance of [LTRScoringModel](solr/contrib/ltr/src/java/org/apache/solr/ltr/feature/LTRScoringModel.java),
+read from the request the model, an instance of [LTRScoringModel](solr/contrib/ltr/src/java/org/apache/solr/ltr/model/LTRScoringModel.java),
 plus other parameters. The plugin will generate an [LTRQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQuery.java), a particular org.apache.solr.search. RankQuery.
 It wraps the original solr query for the first pass ranking, and uses the provided model in a
 [ModelQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/ModelQuery.java) to
