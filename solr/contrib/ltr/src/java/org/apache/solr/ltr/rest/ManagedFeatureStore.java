@@ -89,16 +89,11 @@ public class ManagedFeatureStore extends ManagedResource implements
     }
   }
 
-  public synchronized void addFeature(Map<String,Object> map, String featureStore)
-      throws FeatureException {
-    try {
-      log.info("register feature based on {}", map);
-      final FeatureStore fstore = getFeatureStore(featureStore);
-      final Feature feature = fromFeatureMap(solrResourceLoader, map);
-      fstore.add(feature);
-    } catch (final FeatureException e) {
-      throw new SolrException(ErrorCode.BAD_REQUEST, e);
-    }
+  public synchronized void addFeature(Map<String,Object> map, String featureStore) {
+    log.info("register feature based on {}", map);
+    final FeatureStore fstore = getFeatureStore(featureStore);
+    final Feature feature = fromFeatureMap(solrResourceLoader, map);
+    fstore.add(feature);
   }
 
   @SuppressWarnings("unchecked")
