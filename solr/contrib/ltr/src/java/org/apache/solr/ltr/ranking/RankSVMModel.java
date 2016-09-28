@@ -17,7 +17,6 @@
 package org.apache.solr.ltr.ranking;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -71,16 +70,13 @@ public class RankSVMModel extends LTRScoringModel {
       return;
     }
 
-    int numFound = 0;
-    HashSet<String> missingWeightFeatureNames = new HashSet<String>();
+    final ArrayList<String> missingWeightFeatureNames = new ArrayList<String>();
     for (int i = 0; i < features.size(); ++i) {
-      if (featureToWeight[i] != null) {
-        ++numFound;
-      } else {
+      if (featureToWeight[i] == null) {
         missingWeightFeatureNames.add(features.get(i).getName());
       }
     }
-    if (numFound == 0) {
+    if (missingWeightFeatureNames.size() == features.size()) {
       throw new ModelException("Model " + name + " doesn't contain any weights");
     }
     if (!missingWeightFeatureNames.isEmpty()) {
