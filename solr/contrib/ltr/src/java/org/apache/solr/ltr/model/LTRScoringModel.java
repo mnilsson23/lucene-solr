@@ -34,7 +34,7 @@ import org.apache.solr.ltr.ranking.Feature;
 
 public abstract class LTRScoringModel {
 
-  private final String name;
+  protected final String name;
   private final String featureStoreName;
   protected final List<Feature> features;
   private final List<Feature> allFeatures;
@@ -51,6 +51,13 @@ public abstract class LTRScoringModel {
     this.allFeatures = allFeatures;
     this.params = params;
     this.norms = norms;
+  }
+
+  /**
+   * Validate that settings make sense and throws
+   * {@link ModelException} if they do not make sense.
+   */
+  public void validate() throws ModelException {
   }
 
   /**

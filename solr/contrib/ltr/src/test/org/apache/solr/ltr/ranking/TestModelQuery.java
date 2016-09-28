@@ -137,7 +137,7 @@ public class TestModelQuery extends LuceneTestCase {
         new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
     final Map<String,Object> modelParams = makeFeatureWeights(features);
 
-    final LTRScoringModel algorithm1 = new RankSVMModel(
+    final LTRScoringModel algorithm1 = RankSVMModel.create(
         "testModelName",
         features, norms, "testStoreName", allFeatures, modelParams);
 
@@ -163,7 +163,7 @@ public class TestModelQuery extends LuceneTestCase {
     assertEquals(m1, m2);
     assertEquals(m1.hashCode(), m2.hashCode());
 
-    final LTRScoringModel algorithm2 = new RankSVMModel(
+    final LTRScoringModel algorithm2 = RankSVMModel.create(
         "testModelName2",
         features, norms, "testStoreName", allFeatures, modelParams);
     final ModelQuery m3 = new ModelQuery(algorithm2);
@@ -171,7 +171,7 @@ public class TestModelQuery extends LuceneTestCase {
     assertFalse(m1.equals(m3));
     assertFalse(m1.hashCode() == m3.hashCode());
 
-    final LTRScoringModel algorithm3 = new RankSVMModel(
+    final LTRScoringModel algorithm3 = RankSVMModel.create(
         "testModelName",
         features, norms, "testStoreName3", allFeatures, modelParams);
     final ModelQuery m4 = new ModelQuery(algorithm3);
@@ -221,7 +221,7 @@ public class TestModelQuery extends LuceneTestCase {
     List<Normalizer> norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-    RankSVMModel meta = new RankSVMModel("test",
+    RankSVMModel meta = RankSVMModel.create("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
 
@@ -248,7 +248,7 @@ public class TestModelQuery extends LuceneTestCase {
     norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-    meta = new RankSVMModel("test",
+    meta = RankSVMModel.create("test",
         features, norms, "test", allFeatures, makeFeatureWeights(features));
 
     modelWeight = performQuery(hits, searcher, hits.scoreDocs[0].doc,
@@ -266,7 +266,7 @@ public class TestModelQuery extends LuceneTestCase {
     norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-    meta = new RankSVMModel("test",
+    meta = RankSVMModel.create("test",
         features, norms, "test", allFeatures, makeFeatureWeights(features));
 
     modelWeight = performQuery(hits, searcher, hits.scoreDocs[0].doc,
@@ -290,7 +290,7 @@ public class TestModelQuery extends LuceneTestCase {
     norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),norm));
-    final RankSVMModel normMeta = new RankSVMModel("test",
+    final RankSVMModel normMeta = RankSVMModel.create("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
 

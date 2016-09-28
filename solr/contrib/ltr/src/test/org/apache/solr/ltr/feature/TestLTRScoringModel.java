@@ -62,7 +62,7 @@ public class TestLTRScoringModel extends TestRerankBase {
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     params.put("weights", weights);
-    final LTRScoringModel meta = new RankSVMModel("test1",
+    final LTRScoringModel meta = RankSVMModel.create("test1",
         features, norms, "test", fstore.getFeatures(),
         params);
 
@@ -73,14 +73,20 @@ public class TestLTRScoringModel extends TestRerankBase {
 
   @Test
   public void nullFeatureWeightsTest() {
-    final List<Feature> features = getFeatures(new String[] 
-        {"constant1", "constant5"});
-    final List<Normalizer> norms = 
+    final ModelException expectedException = 
+        new ModelException("Model test2 doesn't contain any weights");
+    try {
+      final List<Feature> features = getFeatures(new String[] 
+          {"constant1", "constant5"});
+      final List<Normalizer> norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-    final LTRScoringModel meta = new RankSVMModel("test2",
-        features, norms, "test", fstore.getFeatures(), null);
-    assertEquals("RankSVMModel(name=test2,featureWeights=[constant1=0.0,constant5=0.0])", meta.toString());
+      final LTRScoringModel meta = RankSVMModel.create("test2",
+          features, norms, "test", fstore.getFeatures(), null);
+      fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
   @Test
@@ -100,7 +106,7 @@ public class TestLTRScoringModel extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test3",
+      final LTRScoringModel meta = RankSVMModel.create("test3",
           features, norms, "test", fstore.getFeatures(),
               params);
       store.addModel(meta);
@@ -130,7 +136,7 @@ public class TestLTRScoringModel extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test4",
+      final LTRScoringModel meta = RankSVMModel.create("test4",
           features, norms, "test", fstore.getFeatures(),
               params);
       store.addModel(meta);
@@ -143,25 +149,27 @@ public class TestLTRScoringModel extends TestRerankBase {
 
   @Test
   public void missingFeatureWeightTest() {
-    final double weight1 = random().nextInt(100)/100d;
-    final double weight5missing = random().nextDouble();
-
-    final List<Feature> features = getFeatures(new String[]
-        {"constant1", "constant5"});
-    final List<Normalizer> norms =
+    final ModelException expectedException = 
+        new ModelException("Model test5 lacks weight(s) for [constant5]");
+    try {
+      final List<Feature> features = getFeatures(new String[] 
+          {"constant1", "constant5"});
+      final List<Normalizer> norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-    final Map<String,Object> weights = new HashMap<>();
-    weights.put("constant1", weight1);
-    weights.put("constant5missing", weight5missing);
+      final Map<String,Object> weights = new HashMap<>();
+      weights.put("constant1", 1d);
+      weights.put("constant5missing", 1d);
 
-    Map<String,Object> params = new HashMap<String,Object>();
-    params.put("weights", weights);
-    final LTRScoringModel meta = new RankSVMModel("test5",
-        features, norms, "test", fstore.getFeatures(),
-        params);
-
-    assertEquals("RankSVMModel(name=test5,featureWeights=[constant1="+weight1+",constant5=0.0])", meta.toString());
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put("weights", weights);
+      final LTRScoringModel meta = RankSVMModel.create("test5",
+          features, norms, "test", fstore.getFeatures(),
+              params);
+      fail("unexpectedly got here instead of catching "+expectedException);
+    } catch (ModelException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
   @Test
@@ -180,7 +188,7 @@ public class TestLTRScoringModel extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test6",
+      final LTRScoringModel meta = RankSVMModel.create("test6",
           features, norms, "test", fstore.getFeatures(),
           params);
       store.addModel(meta);

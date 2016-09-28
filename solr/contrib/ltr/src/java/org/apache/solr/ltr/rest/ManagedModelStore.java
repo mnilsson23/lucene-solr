@@ -186,6 +186,7 @@ public class ManagedModelStore extends ManagedResource implements
           new String[0], // no sub packages
           new Class[] { String.class, List.class, List.class, String.class, List.class, Map.class },
           new Object[] { name, features, norms, featureStoreName, fstore.getFeatures(), params });
+      meta.validate();
     } catch (final Exception e) {
       throw new ModelException("Model type does not exist " + type, e);
     }

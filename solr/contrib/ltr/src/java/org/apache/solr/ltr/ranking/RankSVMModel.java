@@ -17,6 +17,7 @@
 package org.apache.solr.ltr.ranking;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -28,33 +29,62 @@ import org.apache.solr.ltr.model.ModelException;
 
 public class RankSVMModel extends LTRScoringModel {
 
-  private static final Double defaultWeight = 0.0;
-
-  protected float[] featureToWeight;
+  protected Float[] featureToWeight;
 
   /** name of the attribute containing the weight of the SVM model **/
   public static final String WEIGHTS_PARAM = "weights";
 
-  public RankSVMModel(String name, List<Feature> features,
+  public static RankSVMModel create(String name, List<Feature> features,
       List<Normalizer> norms,
       String featureStoreName, List<Feature> allFeatures,
       Map<String,Object> params) throws ModelException {
+    final RankSVMModel model = new RankSVMModel(name, features,
+        norms, featureStoreName, allFeatures, params);
+    model.validate();
+    return model;
+  }
+
+  public RankSVMModel(String name, List<Feature> features,
+      List<Normalizer> norms,
+      String featureStoreName, List<Feature> allFeatures,
+      Map<String,Object> params) {
     super(name, features, norms, featureStoreName, allFeatures, params);
 
     final Map<String,Double> modelWeights = (params == null ? null
         : (Map<String,Double>) params.get(WEIGHTS_PARAM));
 
-    featureToWeight = new float[features.size()];
+    featureToWeight = new Float[features.size()];
 
     if (modelWeights != null) {
       for (int i = 0; i < features.size(); ++i) {
         final String key = features.get(i).getName();
-        featureToWeight[i] = modelWeights.getOrDefault(key, defaultWeight).floatValue();
+        final Double val = modelWeights.get(key);
+        featureToWeight[i] = (val == null ? null : new Float(val.floatValue()));
       }
-    } else {
-      for (int i = 0; i < features.size(); ++i) {
-        featureToWeight[i] = defaultWeight.floatValue();
+    }
+  }
+
+  @Override
+  public void validate() throws ModelException {
+    if (features.isEmpty()) {
+      // unusual but not an error
+      return;
+    }
+
+    int numFound = 0;
+    HashSet<String> missingWeightFeatureNames = new HashSet<String>();
+    for (int i = 0; i < features.size(); ++i) {
+      if (featureToWeight[i] != null) {
+        ++numFound;
+      } else {
+        missingWeightFeatureNames.add(features.get(i).getName());
       }
+    }
+    if (numFound == 0) {
+      throw new ModelException("Model " + name + " doesn't contain any weights");
+    }
+    if (!missingWeightFeatureNames.isEmpty()) {
+      throw new ModelException("Model " + name + " lacks weight(s) for "+missingWeightFeatureNames);
     }
   }
 

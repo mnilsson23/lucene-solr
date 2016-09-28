@@ -146,7 +146,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     final List<Feature> allFeatures = makeFieldValueFeatures(new int[] {0, 1,
         2, 3, 4, 5, 6, 7, 8, 9}, "final-score");
-    final RankSVMModel meta = new RankSVMModel("test",
+    final RankSVMModel meta = RankSVMModel.create("test",
         features, norms, "test", allFeatures, null);
 
     final LTRRescorer rescorer = new LTRRescorer(new ModelQuery(meta));
@@ -226,7 +226,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     final List<Feature> allFeatures = makeFieldValueFeatures(new int[] {0, 1,
         2, 3, 4, 5, 6, 7, 8, 9}, "final-score");
-    final RankSVMModel meta = new RankSVMModel("test",
+    final RankSVMModel meta = RankSVMModel.create("test",
         features, norms, "test", allFeatures, null);
 
     final LTRRescorer rescorer = new LTRRescorer(new ModelQuery(meta));
