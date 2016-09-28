@@ -20,7 +20,10 @@ import org.apache.solr.SolrTestCaseJ4.SuppressSSL;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.TestRerankBase;
+import org.apache.solr.ltr.feature.FieldValueFeature;
+import org.apache.solr.ltr.feature.ValueFeature;
 import org.apache.solr.ltr.ranking.LTRQParserPlugin;
+import org.apache.solr.ltr.ranking.RankSVMModel;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.rest.ManagedResource;
 import org.apache.solr.rest.ManagedResourceStorage;
@@ -83,49 +86,55 @@ public class TestModelManager extends TestRerankBase {
 
     System.out.println("after: \n" + restTestHarness.query("/schema/managed"));
 
+    final String valueFeatureClassName = ValueFeature.class.getCanonicalName();
+
     // Add features
-    String feature = "{\"name\": \"test1\", \"class\": \"org.apache.solr.ltr.feature.ValueFeature\", \"params\": {\"value\": 1} }";
+    String feature = "{\"name\": \"test1\", \"class\": \""+valueFeatureClassName+"\", \"params\": {\"value\": 1} }";
     assertJPut(CommonLTRParams.FEATURE_STORE_END_POINT, feature,
         "/responseHeader/status==0");
 
-    feature = "{\"name\": \"test2\", \"class\": \"org.apache.solr.ltr.feature.ValueFeature\", \"params\": {\"value\": 1} }";
+    feature = "{\"name\": \"test2\", \"class\": \""+valueFeatureClassName+"\", \"params\": {\"value\": 1} }";
     assertJPut(CommonLTRParams.FEATURE_STORE_END_POINT, feature,
         "/responseHeader/status==0");
 
-    feature = "{\"name\": \"test3\", \"class\": \"org.apache.solr.ltr.feature.ValueFeature\", \"params\": {\"value\": 1} }";
+    feature = "{\"name\": \"test3\", \"class\": \""+valueFeatureClassName+"\", \"params\": {\"value\": 1} }";
     assertJPut(CommonLTRParams.FEATURE_STORE_END_POINT, feature,
         "/responseHeader/status==0");
 
-    feature = "{\"name\": \"test33\", \"store\": \"TEST\", \"class\": \"org.apache.solr.ltr.feature.ValueFeature\", \"params\": {\"value\": 1} }";
+    feature = "{\"name\": \"test33\", \"store\": \"TEST\", \"class\": \""+valueFeatureClassName+"\", \"params\": {\"value\": 1} }";
     assertJPut(CommonLTRParams.FEATURE_STORE_END_POINT, feature,
         "/responseHeader/status==0");
 
-    final String multipleFeatures = "[{\"name\": \"test4\", \"class\": \"org.apache.solr.ltr.feature.ValueFeature\", \"params\": {\"value\": 1} }"
-        + ",{\"name\": \"test5\", \"class\": \"org.apache.solr.ltr.feature.ValueFeature\", \"params\": {\"value\": 1} } ]";
+    final String multipleFeatures = "[{\"name\": \"test4\", \"class\": \""+valueFeatureClassName+"\", \"params\": {\"value\": 1} }"
+        + ",{\"name\": \"test5\", \"class\": \""+valueFeatureClassName+"\", \"params\": {\"value\": 1} } ]";
     assertJPut(CommonLTRParams.FEATURE_STORE_END_POINT, multipleFeatures,
         "/responseHeader/status==0");
 
+    final String fieldValueFeatureClassName = FieldValueFeature.class.getCanonicalName();
+    
     // Add bad feature (wrong params)_
-    final String badfeature = "{\"name\": \"fvalue\", \"class\": \"org.apache.solr.ltr.feature.FieldValueFeature\", \"params\": {\"value\": 1} }";
+    final String badfeature = "{\"name\": \"fvalue\", \"class\": \""+fieldValueFeatureClassName+"\", \"params\": {\"value\": 1} }";
     assertJPut(CommonLTRParams.FEATURE_STORE_END_POINT, badfeature,
-        "/error/msg/=='No setter corrresponding to \\'value\\' in org.apache.solr.ltr.feature.FieldValueFeature'");
+        "/error/msg/=='No setter corrresponding to \\'value\\' in "+fieldValueFeatureClassName+"'");
+
+    final String rankSVMModelClassName = RankSVMModel.class.getCanonicalName();
 
     // Add models
-    String model = "{ \"name\":\"testmodel1\", \"class\":\"org.apache.solr.ltr.ranking.RankSVMModel\", \"features\":[] }";
+    String model = "{ \"name\":\"testmodel1\", \"class\":\""+rankSVMModelClassName+"\", \"features\":[] }";
     // fails since it does not have features
     assertJPut(CommonLTRParams.MODEL_STORE_END_POINT, model,
         "/responseHeader/status==400");
     // fails since it does not have weights
-    model = "{ \"name\":\"testmodel2\", \"class\":\"org.apache.solr.ltr.ranking.RankSVMModel\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}] }";
+    model = "{ \"name\":\"testmodel2\", \"class\":\""+rankSVMModelClassName+"\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}] }";
     assertJPut(CommonLTRParams.MODEL_STORE_END_POINT, model,
         "/responseHeader/status==400");
     // success
-    model = "{ \"name\":\"testmodel3\", \"class\":\"org.apache.solr.ltr.ranking.RankSVMModel\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}],\"params\":{\"weights\":{\"test1\":1.5,\"test2\":2.0}}}";
+    model = "{ \"name\":\"testmodel3\", \"class\":\""+rankSVMModelClassName+"\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}],\"params\":{\"weights\":{\"test1\":1.5,\"test2\":2.0}}}";
     assertJPut(CommonLTRParams.MODEL_STORE_END_POINT, model,
         "/responseHeader/status==0");
     // success
-    final String multipleModels = "[{ \"name\":\"testmodel4\", \"class\":\"org.apache.solr.ltr.ranking.RankSVMModel\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}],\"params\":{\"weights\":{\"test1\":1.5,\"test2\":2.0}} }\n"
-        + ",{ \"name\":\"testmodel5\", \"class\":\"org.apache.solr.ltr.ranking.RankSVMModel\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}],\"params\":{\"weights\":{\"test1\":1.5,\"test2\":2.0}} } ]";
+    final String multipleModels = "[{ \"name\":\"testmodel4\", \"class\":\""+rankSVMModelClassName+"\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}],\"params\":{\"weights\":{\"test1\":1.5,\"test2\":2.0}} }\n"
+        + ",{ \"name\":\"testmodel5\", \"class\":\""+rankSVMModelClassName+"\", \"features\":[{\"name\":\"test1\"}, {\"name\":\"test2\"}],\"params\":{\"weights\":{\"test1\":1.5,\"test2\":2.0}} } ]";
     assertJPut(CommonLTRParams.MODEL_STORE_END_POINT, multipleModels,
         "/responseHeader/status==0");
     final String qryResult = JQ(CommonLTRParams.MODEL_STORE_END_POINT);

@@ -50,6 +50,8 @@ import org.apache.solr.ltr.rest.ManagedModelStore;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.request.SolrQueryRequestBase;
 import org.apache.solr.response.SolrQueryResponse;
+import org.apache.solr.rest.ManagedResourceStorage;
+import org.apache.solr.rest.SolrSchemaRestApi;
 import org.apache.solr.util.RestTestBase;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.noggit.ObjectBuilder;
@@ -150,9 +152,9 @@ public class TestRerankBase extends RestTestBase {
     final ServletHolder solrRestApi = new ServletHolder("SolrSchemaRestApi",
         ServerServlet.class);
     solrRestApi.setInitParameter("org.restlet.application",
-        "org.apache.solr.rest.SolrSchemaRestApi");
+        SolrSchemaRestApi.class.getCanonicalName());
     solrRestApi.setInitParameter("storageIO",
-        "org.apache.solr.rest.ManagedResourceStorage$InMemoryStorageIO");
+        ManagedResourceStorage.InMemoryStorageIO.class.getCanonicalName());
     extraServlets.put(solrRestApi, PARENT_ENDPOINT);
 
     System.setProperty("managed.schema.mutable", "true");

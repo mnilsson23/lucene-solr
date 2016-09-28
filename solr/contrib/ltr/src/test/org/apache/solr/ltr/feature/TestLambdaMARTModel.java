@@ -111,7 +111,7 @@ public class TestLambdaMARTModel extends TestRerankBase {
     //
     // assertThat(qryResult, containsString("lambdamartmodel"));
     // assertThat(qryResult,
-    // containsString("org.apache.solr.ltr.ranking.LambdaMARTModel"));
+    // containsString(LambdaMARTModel.class.getCanonicalName()));
     //
     // assertThat(qryResult, containsString("-100.0 = tree 0"));
     // assertThat(qryResult, containsString("50.0 = tree 0"));
