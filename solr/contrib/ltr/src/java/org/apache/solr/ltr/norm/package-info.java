@@ -14,33 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.ltr.feature.norm.impl;
 
-import java.util.LinkedHashMap;
-
-import org.apache.solr.ltr.feature.norm.Normalizer;
-
-public class IdentityNormalizer extends Normalizer {
-
-  public static final IdentityNormalizer INSTANCE = new IdentityNormalizer();
-
-  public IdentityNormalizer() {
-
-  }
-
-  @Override
-  public float normalize(float value) {
-    return value;
-  }
-
-  @Override
-  public LinkedHashMap<String,Object> paramsToMap() {
-    return null;
-  }
-
-  @Override
-  public String toString() {
-    return getClass().getSimpleName();
-  }
-
-}
+/**
+ * A normalizer normalizes the value of a feature. Once that the feature values
+ * will be computed, the normalizer will be applied and the resulting values
+ * will be received by the model.
+ */
+package org.apache.solr.ltr.norm;

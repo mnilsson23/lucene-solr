@@ -14,59 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.ltr.feature.norm.impl;
+package org.apache.solr.ltr.norm;
 
 import java.util.LinkedHashMap;
-import org.apache.solr.ltr.feature.norm.Normalizer;
 
-public class MinMaxNormalizer extends Normalizer {
+public class StandardNormalizer extends Normalizer {
 
-  private float min = Float.NEGATIVE_INFINITY;
-  private float max = Float.POSITIVE_INFINITY;
-  private float delta = max - min;
+  private float avg = 0f;
+  private float std = 1f;
 
-  private void updateDelta() {
-    delta = max - min;
+  public float getAvg() {
+    return avg;
   }
 
-  public float getMin() {
-    return min;
+  public void setAvg(float avg) {
+    this.avg = avg;
   }
 
-  public void setMin(float min) {
-    this.min = min;
-    updateDelta();
+  public float getStd() {
+    return std;
   }
 
-  public void setMin(String min) {
-    this.min = Float.parseFloat(min);
-    updateDelta();
+  public void setStd(float std) {
+    this.std = std;
   }
 
-  public float getMax() {
-    return max;
+  public void setAvg(String avg) {
+    this.avg = Float.parseFloat(avg);
   }
 
-  public void setMax(float max) {
-    this.max = max;
-    updateDelta();
-  }
-
-  public void setMax(String max) {
-    this.max = Float.parseFloat(max);
-    updateDelta();
+  public void setStd(String std) {
+    this.std = Float.parseFloat(std);
   }
 
   @Override
   public float normalize(float value) {
-    return (value - min) / delta;
+    return (value - avg) / std;
   }
 
   @Override
   public LinkedHashMap<String,Object> paramsToMap() {
     final LinkedHashMap<String,Object> params = new LinkedHashMap<>(2, 1.0f);
-    params.put("min", min);
-    params.put("max", max);
+    params.put("avg", avg);
+    params.put("std", std);
     return params;
   }
 
@@ -74,8 +64,8 @@ public class MinMaxNormalizer extends Normalizer {
   public String toString() {
     final StringBuilder sb = new StringBuilder(64); // default initialCapacity of 16 won't be enough
     sb.append(getClass().getSimpleName()).append('(');
-    sb.append("min=").append(min);
-    sb.append(",max=").append(max).append(')');
+    sb.append("avg=").append(avg);
+    sb.append(",std=").append(avg).append(')');
     return sb.toString();
   }
 
