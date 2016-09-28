@@ -177,7 +177,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     }
 
     // when features are NOT requested in the response, only the modelFeature weights should be created
-    RankSVMModel meta1 = new RankSVMModel("test",
+    RankSVMModel meta1 = RankSVMModel.create("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,
@@ -193,7 +193,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     assertEquals(validFeatures, features.size());
     
     // when features are requested in the response, weights should be created for all features
-    RankSVMModel meta2 = new RankSVMModel("test",
+    RankSVMModel meta2 = RankSVMModel.create("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     modelWeight = performQuery(hits, searcher,
@@ -350,7 +350,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     // When maxThreads is set to 1, no threading should be used but the weight creation should run serially
     LTRThreadModule.setThreads(1, 1);
     LTRThreadModule.initSemaphore();
-    RankSVMModel meta1 = new RankSVMModel("test",
+    RankSVMModel meta1 = RankSVMModel.create("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,

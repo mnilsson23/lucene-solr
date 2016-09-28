@@ -62,7 +62,7 @@ public class TestLTRScoringModel extends TestRerankBase {
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     params.put("weights", weights);
-    final LTRScoringModel meta = new RankSVMModel("test1",
+    final LTRScoringModel meta = RankSVMModel.create("test1",
         features, norms, "test", fstore.getFeatures(),
         params);
 
@@ -81,7 +81,7 @@ public class TestLTRScoringModel extends TestRerankBase {
       final List<Normalizer> norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-      final LTRScoringModel meta = new RankSVMModel("test2",
+      final LTRScoringModel meta = RankSVMModel.create("test2",
           features, norms, "test", fstore.getFeatures(), null);
       fail("unexpectedly got here instead of catching "+expectedException);
     } catch (ModelException actualException) {
@@ -106,7 +106,7 @@ public class TestLTRScoringModel extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test3",
+      final LTRScoringModel meta = RankSVMModel.create("test3",
           features, norms, "test", fstore.getFeatures(),
               params);
       store.addModel(meta);
@@ -136,7 +136,7 @@ public class TestLTRScoringModel extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test4",
+      final LTRScoringModel meta = RankSVMModel.create("test4",
           features, norms, "test", fstore.getFeatures(),
               params);
       store.addModel(meta);
@@ -150,7 +150,7 @@ public class TestLTRScoringModel extends TestRerankBase {
   @Test
   public void missingFeatureWeightTest() {
     final ModelException expectedException = 
-        new ModelException("no weight for feature constant5");
+        new ModelException("Model test5 lacks weight(s) for [constant5]");
     try {
       final List<Feature> features = getFeatures(new String[] 
           {"constant1", "constant5"});
@@ -163,7 +163,7 @@ public class TestLTRScoringModel extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test5",
+      final LTRScoringModel meta = RankSVMModel.create("test5",
           features, norms, "test", fstore.getFeatures(),
               params);
       fail("unexpectedly got here instead of catching "+expectedException);
@@ -188,7 +188,7 @@ public class TestLTRScoringModel extends TestRerankBase {
 
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("weights", weights);
-      final LTRScoringModel meta = new RankSVMModel("test6",
+      final LTRScoringModel meta = RankSVMModel.create("test6",
           features, norms, "test", fstore.getFeatures(),
           params);
       store.addModel(meta);
