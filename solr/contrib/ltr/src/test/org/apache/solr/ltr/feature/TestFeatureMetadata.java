@@ -61,13 +61,13 @@ public class TestFeatureMetadata extends TestRerankBase {
   @Test
   public void getInvalidInstanceTest()
   {
+    final String nonExistingClassName = "org.apache.solr.ltr.feature.LOLFeature";
     final ClassNotFoundException expectedException = 
-        new ClassNotFoundException(
-            "org.apache.solr.ltr.feature.LOLFeature");
+        new ClassNotFoundException(nonExistingClassName);
     try {
       final Map<String,Object> map = new HashMap<String,Object>();
       map.put(ManagedFeatureStore.NAME_KEY, "test");
-      map.put(ManagedFeatureStore.CLASS_KEY, "org.apache.solr.ltr.feature.LOLFeature");
+      map.put(ManagedFeatureStore.CLASS_KEY, nonExistingClassName);
       store.addFeature(map, "testFstore2");
       fail("getInvalidInstanceTest failed to throw exception: "+expectedException);
     } catch (Exception actualException) {
