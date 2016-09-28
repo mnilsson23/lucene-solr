@@ -26,26 +26,6 @@ public class LTRUtils {
 
   static public final Map<String,Object> EMPTY_MAP = new HashMap<String,Object>();
   
-  /**
-   * Given a set of local SolrParams, extract all of the efi.key=value params into a map
-   * @param localParams Local request parameters that might conatin efi params
-   * @return Map of efi params, where the key is the name of the efi param, and the
-   *  value is the value of the efi param
-   */
-  public static Map<String,String[]> extractEFIParams(SolrParams localParams) {
-    final Map<String,String[]> externalFeatureInfo = new HashMap<>();
-    for (final Iterator<String> it = localParams.getParameterNamesIterator(); it
-        .hasNext();) {
-      final String name = it.next();
-      if (name.startsWith(CommonLTRParams.EXTERNAL_FEATURE_INFO)) {
-        externalFeatureInfo.put(
-            name.substring(CommonLTRParams.EXTERNAL_FEATURE_INFO.length()),
-            new String[] {localParams.get(name)});
-      }
-    }
-    return externalFeatureInfo;
-  }
-  
   @Deprecated
   public static float convertToFloat(Object o) {
     float f = 0;

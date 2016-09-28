@@ -17,6 +17,8 @@
 package org.apache.solr.ltr.ranking;
 
 import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.lucene.search.Query;
@@ -35,7 +37,6 @@ import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.SyntaxError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.solr.ltr.ranking.LTRThreadModule;
 
 /**
  * Plug into solr a rerank model.
@@ -62,6 +63,27 @@ public class LTRQParserPlugin extends QParserPlugin {
       SolrParams params, SolrQueryRequest req) {
     return new LTRQParser(qstr, localParams, params, req);
   }
+  
+  /**
+   * Given a set of local SolrParams, extract all of the efi.key=value params into a map
+   * @param localParams Local request parameters that might conatin efi params
+   * @return Map of efi params, where the key is the name of the efi param, and the
+   *  value is the value of the efi param
+   */
+  public static Map<String,String[]> extractEFIParams(SolrParams localParams) {
+    final Map<String,String[]> externalFeatureInfo = new HashMap<>();
+    for (final Iterator<String> it = localParams.getParameterNamesIterator(); it
+        .hasNext();) {
+      final String name = it.next();
+      if (name.startsWith(CommonLTRParams.EXTERNAL_FEATURE_INFO)) {
+        externalFeatureInfo.put(
+            name.substring(CommonLTRParams.EXTERNAL_FEATURE_INFO.length()),
+            new String[] {localParams.get(name)});
+      }
+    }
+    return externalFeatureInfo;
+  }
+  
 
   public class LTRQParser extends QParser {
 
@@ -115,8 +137,7 @@ public class LTRQParserPlugin extends QParserPlugin {
       reRankDocs = Math.max(1, reRankDocs);
 
       // External features
-      final Map<String,String[]> externalFeatureInfo = LTRUtils.extractEFIParams(localParams);
-      reRankModel.setExternalFeatureInfo(externalFeatureInfo);
+      reRankModel.setExternalFeatureInfo( extractEFIParams(localParams) );
       reRankModel.setRequest(req);
 
       return new LTRQuery(reRankModel, reRankDocs);
