@@ -18,7 +18,6 @@ package org.apache.solr.ltr.ranking;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.ReaderUtil;
@@ -36,7 +35,6 @@ import org.apache.solr.ltr.ranking.ModelQuery.ModelWeight;
 import org.apache.solr.ltr.ranking.ModelQuery.ModelWeight.ModelScorer;
 import org.apache.solr.ltr.rest.ManagedFeatureStore;
 import org.apache.solr.ltr.util.CommonLTRParams;
-import org.apache.solr.ltr.util.LTRUtils;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.ResultContext;
 import org.apache.solr.response.transform.DocTransformer;
@@ -134,9 +132,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
           reRankModel = new ModelQuery(lm, true); // request feature weights to be created for all features
 
           // Local transformer efi if provided
-          final Map<String,String[]> externalFeatureInfo = LTRUtils.extractEFIParams(params);
-          reRankModel.setExternalFeatureInfo(externalFeatureInfo);
-
+          reRankModel.setExternalFeatureInfo( LTRQParserPlugin.extractEFIParams(params) );
           reRankModel.setOriginalQuery(context.getQuery());
 
         }catch (final Exception e) {
