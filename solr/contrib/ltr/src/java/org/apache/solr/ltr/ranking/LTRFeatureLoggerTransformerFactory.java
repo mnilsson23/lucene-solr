@@ -41,6 +41,7 @@ import org.apache.solr.response.ResultContext;
 import org.apache.solr.response.transform.DocTransformer;
 import org.apache.solr.response.transform.TransformerFactory;
 import org.apache.solr.search.SolrIndexSearcher;
+import org.apache.solr.util.SolrPluginUtils;
 
 /**
  * This transformer will take care to generate and append in the response the
@@ -50,9 +51,18 @@ import org.apache.solr.search.SolrIndexSearcher;
  */
 public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
 
+  public static String DEFAULT_LOGGING_MODEL_NAME = "logging-model";
+
+  private String loggingModelName = DEFAULT_LOGGING_MODEL_NAME;
+
+  public void setLoggingModelName(String loggingModelName) {
+    this.loggingModelName = loggingModelName;
+  }
+
   @Override
   public void init(@SuppressWarnings("rawtypes") NamedList args) {
     super.init(args);
+    SolrPluginUtils.invokeSetters(this, args);
   }
 
   @Override
@@ -69,16 +79,16 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
 
   class FeatureTransformer extends DocTransformer {
 
-    String name;
-    SolrParams params;
-    SolrQueryRequest req;
+    final private String name;
+    final private SolrParams params;
+    final private SolrQueryRequest req;
 
-    List<LeafReaderContext> leafContexts;
-    SolrIndexSearcher searcher;
-    ModelQuery reRankModel;
-    ModelWeight modelWeight;
-    FeatureLogger<?> featureLogger;
-    boolean resultsReranked;
+    private List<LeafReaderContext> leafContexts;
+    private SolrIndexSearcher searcher;
+    private ModelQuery reRankModel;
+    private ModelWeight modelWeight;
+    private FeatureLogger<?> featureLogger;
+    private boolean resultsReranked;
 
     /**
      * @param name
@@ -129,7 +139,9 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
         featureStoreName = store.getName(); // if featureStoreName was null before this gets actual name
 
         try {
-          final LoggingModel lm = new LoggingModel(featureStoreName,store.getFeatures());
+          final LoggingModel lm = new LoggingModel(loggingModelName,
+              featureStoreName, store.getFeatures());
+
           reRankModel = new ModelQuery(lm, true); // request feature weights to be created for all features
 
           // Local transformer efi if provided
