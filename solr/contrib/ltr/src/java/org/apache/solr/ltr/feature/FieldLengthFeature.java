@@ -54,11 +54,11 @@ public class FieldLengthFeature extends Feature {
   private static final float[] NORM_TABLE = new float[256];
 
   static {
-    for (int i = 0; i < 256; i++) {
-      NORM_TABLE[i] = SmallFloat.byte315ToFloat((byte) i);
-
+    NORM_TABLE[0] = 0;
+    for (int i = 1; i < 256; i++) {
+      float norm = SmallFloat.byte315ToFloat((byte) i);
+      NORM_TABLE[i] = 1.0f / (norm * norm);
     }
-
   }
 
   /**
@@ -79,6 +79,7 @@ public class FieldLengthFeature extends Feature {
   public FeatureWeight createWeight(IndexSearcher searcher, boolean needsScores, 
       SolrQueryRequest request, Query originalQuery, Map<String,String[]> efi)
       throws IOException {
+
     return new FieldLengthFeatureWeight(searcher, request, originalQuery, efi);
   }
 
@@ -92,22 +93,23 @@ public class FieldLengthFeature extends Feature {
 
     @Override
     public FeatureScorer scorer(LeafReaderContext context) throws IOException {
-      return new FieldLengthFeatureScorer(this, context);
-
+      NumericDocValues norms = context.reader().getNormValues(field);
+      if (norms == null){
+        return new ValueFeatureScorer(this, 0f);
+      }
+      return new FieldLengthFeatureScorer(this, norms);
     }
 
     public class FieldLengthFeatureScorer extends FeatureScorer {
 
-      LeafReaderContext context = null;
       NumericDocValues norms = null;
       DocIdSetIterator itr;
 
       public FieldLengthFeatureScorer(FeatureWeight weight,
-          LeafReaderContext context) throws IOException {
+          NumericDocValues norms) throws IOException {
         super(weight);
-        this.context = context;
         itr = new MatchAllIterator();
-        norms = context.reader().getNormValues(field);
+        this.norms = norms;
 
         // In the constructor, docId is -1, so using 0 as default lookup
         final IndexableField idxF = searcher.doc(0).getField(field);
@@ -116,16 +118,13 @@ public class FieldLengthFeature extends Feature {
               "FieldLengthFeatures can't be used if omitNorms is enabled (field="
                   + field + ")");
         }
-
       }
 
       @Override
       public float score() throws IOException {
 
         final long l = norms.get(itr.docID());
-        final float norm = decodeNorm(l);
-        final float numTerms = (float) Math.pow(1f / norm, 2);
-
+        final float numTerms = decodeNorm(l);
         return numTerms;
       }
 
