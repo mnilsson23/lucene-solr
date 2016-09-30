@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +75,11 @@ public class ModelQuery extends Query {
   private Semaphore querySemaphore; // limits the number of threads per query, so that multiple requests can be serviced simultaneously
 
   public ModelQuery(LTRScoringModel meta) {
-    this(meta, null, false);
+    this(meta, Collections.emptyMap(), false);
+  }
+
+  public ModelQuery(LTRScoringModel meta, boolean extractAllFeatures) {
+    this(meta, Collections.emptyMap(), extractAllFeatures);
   }
 
   public ModelQuery(LTRScoringModel meta, 
