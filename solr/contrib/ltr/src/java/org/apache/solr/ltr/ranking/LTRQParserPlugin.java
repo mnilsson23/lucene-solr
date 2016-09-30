@@ -159,7 +159,9 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
       // Check if features are requested and if the model feature store and feature-transform feature store are the same
       final boolean featuresRequestedFromSameStore = (extractFeatures != null && (modelFeatureStoreName.equals(fvStoreName) || fvStoreName == null) ) ? extractFeatures.booleanValue():false;
       
-      final ModelQuery reRankModel = new ModelQuery(meta, featuresRequestedFromSameStore);
+      final ModelQuery reRankModel = new ModelQuery(meta, 
+          extractEFIParams(localParams), 
+          featuresRequestedFromSameStore);
 
       // Enable the feature vector caching if we are extracting features, and the features
       // we requested are the same ones we are reranking with 
@@ -178,7 +180,6 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
       reRankDocs = Math.max(1, reRankDocs);
 
       // External features
-      reRankModel.setExternalFeatureInfo( extractEFIParams(localParams) );
       reRankModel.setRequest(req);
 
       return new LTRQuery(reRankModel, reRankDocs);

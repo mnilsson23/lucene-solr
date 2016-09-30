@@ -142,10 +142,11 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
           final LoggingModel lm = new LoggingModel(loggingModelName,
               featureStoreName, store.getFeatures());
 
-          reRankModel = new ModelQuery(lm, true); // request feature weights to be created for all features
+          reRankModel = new ModelQuery(lm, 
+              LTRQParserPlugin.extractEFIParams(params), 
+              true); // request feature weights to be created for all features
 
           // Local transformer efi if provided
-          reRankModel.setExternalFeatureInfo( LTRQParserPlugin.extractEFIParams(params) );
           reRankModel.setOriginalQuery(context.getQuery());
 
         }catch (final Exception e) {

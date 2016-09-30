@@ -181,7 +181,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(meta1, false)); // features not requested in response
+        hits.scoreDocs[0].doc, new ModelQuery(meta1, null, false)); // features not requested in response
     
     assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
     int validFeatures = 0;
@@ -197,7 +197,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(meta2, true)); // features requested in response
+        hits.scoreDocs[0].doc, new ModelQuery(meta2, null, true)); // features requested in response
 
     assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
     assertEquals(allFeatures.size(), modelWeight.extractedFeatureWeights.length);
@@ -354,7 +354,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(meta1, false)); // features not requested in response  
+        hits.scoreDocs[0].doc, new ModelQuery(meta1, null, false)); // features not requested in response  
     assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
     LTRThreadModule.setThreads(0, 0);
     LTRThreadModule.ltrSemaphore = null;
