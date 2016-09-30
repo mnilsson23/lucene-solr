@@ -16,7 +16,6 @@
  */
 package org.apache.solr.ltr.ranking;
 
-import java.util.concurrent.Future;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
@@ -29,6 +28,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.Semaphore;
@@ -49,7 +49,6 @@ import org.apache.solr.ltr.model.LTRScoringModel;
 import org.apache.solr.ltr.ranking.Feature.FeatureWeight;
 import org.apache.solr.ltr.ranking.Feature.FeatureWeight.FeatureScorer;
 import org.apache.solr.request.SolrQueryRequest;
-import org.apache.solr.ltr.ranking.LTRThreadModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +64,7 @@ public class ModelQuery extends Query {
   protected FeatureLogger<?> fl;
   // Map of external parameters, such as query intent, that can be used by
   // features
-  protected Map<String,String[]> efi;
+  protected final Map<String,String[]> efi;
   // Original solr query used to fetch matching documents
   protected Query originalQuery;
   // Original solr request
@@ -249,6 +248,7 @@ public class ModelQuery extends Query {
       this.req = req;
     }
 
+    @Override
     public FeatureWeight call() throws Exception{
       try {
         FeatureWeight fw  = f.createWeight(searcher, needsScores, req, originalQuery, efi);
