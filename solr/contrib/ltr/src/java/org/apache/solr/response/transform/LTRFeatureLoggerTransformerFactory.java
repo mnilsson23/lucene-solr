@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.ltr.ranking;
+package org.apache.solr.response.transform;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,7 +30,8 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.ltr.feature.FeatureStore;
 import org.apache.solr.ltr.feature.OriginalScoreFeature;
 import org.apache.solr.ltr.log.FeatureLogger;
-import org.apache.solr.ltr.log.LoggingModel;
+import org.apache.solr.ltr.model.LoggingModel;
+import org.apache.solr.ltr.ranking.ModelQuery;
 import org.apache.solr.ltr.ranking.ModelQuery.FeatureInfo;
 import org.apache.solr.ltr.ranking.ModelQuery.ModelWeight;
 import org.apache.solr.ltr.ranking.ModelQuery.ModelWeight.ModelScorer;
@@ -40,6 +41,7 @@ import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.ResultContext;
 import org.apache.solr.response.transform.DocTransformer;
 import org.apache.solr.response.transform.TransformerFactory;
+import org.apache.solr.search.LTRQParserPlugin;
 import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.util.SolrPluginUtils;
 
@@ -50,6 +52,21 @@ import org.apache.solr.util.SolrPluginUtils;
  * machine learning framework).
  */
 public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
+
+  // used inside fl to specify the output format (csv/json) of the extracted features
+  public static final String FV_RESPONSE_WRITER = "fvwt";
+
+  // used inside fl to specify the format (dense|sparse) of the extracted features
+  public static final String FV_FORMAT = "format";
+
+  // used inside fl to specify the feature store to use for the feature extraction
+  public static final String FV_STORE = "store";
+
+  public static FeatureLogger<?> getFeatureLogger(SolrQueryRequest req) {
+    final String stringFormat = (String) req.getContext().get(FV_RESPONSE_WRITER);
+    final String featureFormat = (String) req.getContext().get(FV_FORMAT);
+    return FeatureLogger.getFeatureLogger(stringFormat, featureFormat);
+  }
 
   public static String DEFAULT_LOGGING_MODEL_NAME = "logging-model";
 
@@ -71,8 +88,9 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
 
     // Hint to enable feature vector cache since we are requesting features
     req.getContext().put(CommonLTRParams.LOG_FEATURES_QUERY_PARAM, true);
-    req.getContext().put(CommonLTRParams.FV_STORE, params.get(CommonLTRParams.FV_STORE));
-    req.getContext().put(CommonLTRParams.FV_FORMAT, params.get(CommonLTRParams.FV_FORMAT));
+    req.getContext().put(FV_STORE, params.get(FV_STORE));
+    req.getContext().put(FV_FORMAT, params.get(FV_FORMAT));
+    req.getContext().put(FV_RESPONSE_WRITER, params.get(FV_RESPONSE_WRITER));
 
     return new FeatureTransformer(name, params, req);
   }
@@ -128,7 +146,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
       // Setup ModelQuery
       reRankModel = (ModelQuery) req.getContext().get(CommonLTRParams.MODEL);
       resultsReranked = (reRankModel != null);
-      String featureStoreName = params.get(CommonLTRParams.FV_STORE);
+      String featureStoreName = (String)req.getContext().get(FV_STORE);
       if (!resultsReranked || (featureStoreName != null && (!featureStoreName.equals(reRankModel.getFeatureStoreName())))) {
         // if store is set in the trasformer we should overwrite the logger
 
@@ -156,9 +174,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
       }
 
       if (reRankModel.getFeatureLogger() == null){
-        final String featureResponseFormat = req.getParams().get(CommonLTRParams.FV_RESPONSE_WRITER,"csv");
-        final String featureFormat = req.getParams().get(CommonLTRParams.FV_FORMAT,"sparse");
-        reRankModel.setFeatureLogger(FeatureLogger.getFeatureLogger(featureResponseFormat,featureFormat));
+        reRankModel.setFeatureLogger( getFeatureLogger(req) );
       }
       reRankModel.setRequest(req);
 
@@ -195,11 +211,11 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
           if (!resultsReranked) {
             // If results have not been reranked, the score passed in is the original query's
             // score, which some features can use instead of recalculating it
-            r.setDocInfoParam(OriginalScoreFeature.ORIGINAL_DOC_SCORE, new Float(score));
+            r.getDocInfo().setOriginalDocScore(new Float(score));
           }
           r.score();
           doc.addField(name,
-              featureLogger.makeFeatureVector(modelWeight.featuresInfo));
+              featureLogger.makeFeatureVector(modelWeight.getFeaturesInfo()));
         }
       } else {
         doc.addField(name, fv);

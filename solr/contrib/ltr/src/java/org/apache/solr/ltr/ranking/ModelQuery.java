@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -45,10 +44,11 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
+import org.apache.solr.ltr.feature.Feature;
+import org.apache.solr.ltr.feature.Feature.FeatureWeight;
+import org.apache.solr.ltr.feature.Feature.FeatureWeight.FeatureScorer;
 import org.apache.solr.ltr.log.FeatureLogger;
 import org.apache.solr.ltr.model.LTRScoringModel;
-import org.apache.solr.ltr.ranking.Feature.FeatureWeight;
-import org.apache.solr.ltr.ranking.Feature.FeatureWeight.FeatureScorer;
 import org.apache.solr.request.SolrQueryRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -380,6 +380,10 @@ public class ModelQuery extends Query {
       } 
     }
 
+    public FeatureInfo[] getFeaturesInfo(){
+      return featuresInfo;
+    }
+
     /**
      * Goes through all the stored feature values, and calculates the normalized
      * values for all the features that will be used for scoring.
@@ -461,12 +465,16 @@ public class ModelQuery extends Query {
     }
 
     public class ModelScorer extends Scorer {
-      protected HashMap<String,Object> docInfo;
-      protected Scorer featureTraversalScorer;
+      final private DocInfo docInfo;
+      final private Scorer featureTraversalScorer;
+
+      public DocInfo getDocInfo() {
+        return docInfo;
+      }
 
       public ModelScorer(Weight weight, List<FeatureScorer> featureScorers) {
         super(weight);
-        docInfo = new HashMap<String,Object>();
+        docInfo = new DocInfo();
         for (final FeatureScorer subSocer : featureScorers) {
           subSocer.setDocInfo(docInfo);
         }
@@ -481,10 +489,6 @@ public class ModelQuery extends Query {
       @Override
       public Collection<ChildScorer> getChildren() {
         return featureTraversalScorer.getChildren();
-      }
-
-      public void setDocInfoParam(String key, Object value) {
-        docInfo.put(key, value);
       }
 
       @Override

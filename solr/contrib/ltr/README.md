@@ -90,7 +90,7 @@ BONUS: Train an actual machine learning model
   ...
 
   <!-- Query parser used to rerank top docs with a provided model -->
-  <queryParser name="ltr" class="org.apache.solr.ltr.ranking.LTRQParserPlugin" />
+  <queryParser name="ltr" class="org.apache.solr.search.LTRQParserPlugin" />
 
   <!--  Transformer that will encode the document features in the response.
   For each document the transformer will add the features as an extra field
@@ -99,7 +99,7 @@ BONUS: Train an actual machine learning model
   In order to get the feature vector you will have to
   specify that you want the field (e.g., fl="*,[features])  -->
 
-  <transformer name="features" class="org.apache.solr.ltr.ranking.LTRFeatureLoggerTransformerFactory" />
+  <transformer name="features" class="org.apache.solr.response.transform.LTRFeatureLoggerTransformerFactory" />
 
   <query>
     ...
@@ -193,7 +193,7 @@ See the [Run a Rerank Query](#run-a-rerank-query) section for how to pass in ext
 
 ### Custom Features
 Custom features can be created by extending from
-org.apache.solr.ltr.ranking.Feature, however this is generally not recommended.
+org.apache.solr.ltr.feature.Feature, however this is generally not recommended.
 The majority of features should be possible to create using the methods described
 above.
 
@@ -210,7 +210,7 @@ to the bias value you'd like and make a weight of 1.0 for that feature.
 ###### model.json
 ```json
 {
-    "class":"org.apache.solr.ltr.ranking.RankSVMModel",
+    "class":"org.apache.solr.ltr.model.RankSVMModel",
     "name":"myModelName",
     "features":[
         { "name": "userTextTitleMatch"},
@@ -247,7 +247,7 @@ libSVM model format to the format specified above.
 ###### model2.json
 ```json
 {
-    "class":"org.apache.solr.ltr.ranking.LambdaMARTModel",
+    "class":"org.apache.solr.ltr.model.LambdaMARTModel",
     "name":"lambdamartmodel",
     "features":[
         { "name": "userTextTitleMatch"},
@@ -390,7 +390,7 @@ About half the time for ranking is spent in the creation of weights for each fea
 
 <config>
   <!-- Query parser used to rerank top docs with a provided model -->
-  <queryParser name="ltr" class="org.apache.solr.ltr.ranking.LTRQParserPlugin">
+  <queryParser name="ltr" class="org.apache.solr.search.LTRQParserPlugin">
      <int name="LTRMaxThreads">10</int> <!-- Maximum threads to use for all queries -->
      <int name="LTRMaxQueryThreads">5</int> <!-- Maximum threads to use for a single query-->
   </queryParser>

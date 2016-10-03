@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.ltr.ranking;
+package org.apache.solr.search;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
@@ -31,17 +31,21 @@ import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.ltr.log.FeatureLogger;
 import org.apache.solr.ltr.model.LTRScoringModel;
+import org.apache.solr.ltr.ranking.LTRThreadModule;
+import org.apache.solr.ltr.ranking.ModelQuery;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.rest.ManagedFeatureStore;
 import org.apache.solr.ltr.rest.ManagedModelStore;
 import org.apache.solr.ltr.util.CommonLTRParams;
 import org.apache.solr.ltr.util.LTRUtils;
 import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.response.transform.LTRFeatureLoggerTransformerFactory;
 import org.apache.solr.rest.ManagedResource;
 import org.apache.solr.rest.ManagedResourceObserver;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.SyntaxError;
+import org.apache.solr.search.ltr.LTRQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,7 +159,7 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
 
       final String modelFeatureStoreName = meta.getFeatureStoreName();
       final Boolean extractFeatures = (Boolean) req.getContext().get(CommonLTRParams.LOG_FEATURES_QUERY_PARAM);
-      final String fvStoreName = (String) req.getContext().get(CommonLTRParams.FV_STORE);
+      final String fvStoreName = (String) req.getContext().get(LTRFeatureLoggerTransformerFactory.FV_STORE);
       // Check if features are requested and if the model feature store and feature-transform feature store are the same
       final boolean featuresRequestedFromSameStore = (extractFeatures != null && (modelFeatureStoreName.equals(fvStoreName) || fvStoreName == null) ) ? extractFeatures.booleanValue():false;
       
@@ -166,12 +170,7 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
       // Enable the feature vector caching if we are extracting features, and the features
       // we requested are the same ones we are reranking with 
       if (featuresRequestedFromSameStore) {
-        final String fvFeatureFormat = (String) req.getContext().get(CommonLTRParams.FV_FORMAT);
-        final FeatureLogger<?> solrLogger = FeatureLogger
-            .getFeatureLogger(params.get(CommonLTRParams.FV_RESPONSE_WRITER),
-                fvFeatureFormat);
-        reRankModel.setFeatureLogger(solrLogger);
-        req.getContext().put(CommonLTRParams.LOGGER_NAME, solrLogger);
+        reRankModel.setFeatureLogger( LTRFeatureLoggerTransformerFactory.getFeatureLogger(req) );
       }
       req.getContext().put(CommonLTRParams.MODEL, reRankModel);
 

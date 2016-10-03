@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.solr.ltr.ranking;
+package org.apache.solr.ltr.feature;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +32,7 @@ import org.apache.lucene.search.Weight;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.request.macro.MacroExpander;
 import org.apache.solr.core.SolrResourceLoader;
+import org.apache.solr.ltr.ranking.DocInfo;
 import org.apache.solr.util.SolrPluginUtils;
 
 /**
@@ -227,64 +227,37 @@ public abstract class Feature extends Query {
      */
     public abstract class FeatureScorer extends Scorer {
 
-      protected String name;
-      private HashMap<String,Object> docInfo;
+      final protected String name;
+      private DocInfo docInfo;
+      protected DocIdSetIterator itr;
 
-      public FeatureScorer(Feature.FeatureWeight weight) {
+      public FeatureScorer(Feature.FeatureWeight weight,
+          DocIdSetIterator itr) {
         super(weight);
+        this.itr = itr;
         name = weight.getName();
+        docInfo = null;
       }
 
       @Override
       public abstract float score() throws IOException;
 
-
       /**
        * Used to provide context from initial score steps to later reranking steps.
        */
-      public void setDocInfo(HashMap<String,Object> iDocInfo) {
-        docInfo = iDocInfo;
+      public void setDocInfo(DocInfo docInfo) {
+        this.docInfo = docInfo;
       }
 
-      public Object getDocParam(String key) {
-        return docInfo.get(key);
-      }
-
-      public boolean hasDocParam(String key) {
-        if (docInfo != null) {
-          return docInfo.containsKey(key);
-        } else {
-          return false;
-        }
+      public DocInfo getDocInfo() {
+        return docInfo;
       }
 
       @Override
       public int freq() throws IOException {
         throw new UnsupportedOperationException();
       }
-    }
-
-    /**
-     * Default FeatureScorer class that returns the score passed in. Can be used
-     * as a simple ValueFeature, or to return a default scorer in case an
-     * underlying feature's scorer is null.
-     */
-    public class ValueFeatureScorer extends FeatureScorer {
-
-      float constScore;
-      DocIdSetIterator itr;
-
-      public ValueFeatureScorer(FeatureWeight weight, float constScore) {
-        super(weight);
-        this.constScore = constScore;
-        itr = DocIdSetIterator.all(DocIdSetIterator.NO_MORE_DOCS);
-      }
-
-      @Override
-      public float score() {
-        return constScore;
-      }
-
+      
       @Override
       public int docID() {
         return itr.docID();
@@ -294,6 +267,26 @@ public abstract class Feature extends Query {
       public DocIdSetIterator iterator() {
         return itr;
       }
+    }
+
+    /**
+     * Default FeatureScorer class that returns the score passed in. Can be used
+     * as a simple ValueFeature, or to return a default scorer in case an
+     * underlying feature's scorer is null.
+     */
+    public class ValueFeatureScorer extends FeatureScorer {
+      float constScore;
+
+      public ValueFeatureScorer(FeatureWeight weight, float constScore,
+          DocIdSetIterator itr) {
+        super(weight,itr);
+        this.constScore = constScore;
+      }
+
+      @Override
+      public float score() {
+        return constScore;
+      }   
 
     }
 

@@ -44,9 +44,11 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.ranking.ModelQuery.FeatureInfo;
+import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.feature.ValueFeature;
 import org.apache.solr.ltr.model.LTRScoringModel;
 import org.apache.solr.ltr.model.ModelException;
+import org.apache.solr.ltr.model.RankSVMModel;
 import org.apache.solr.ltr.norm.IdentityNormalizer;
 import org.apache.solr.ltr.norm.Normalizer;
 import org.junit.Test;
@@ -94,9 +96,6 @@ public class TestModelQuery extends LuceneTestCase {
     final HashMap<String,Double> modelWeights = new HashMap<String,Double>();
     for (final Feature feat : features) {
       modelWeights.put(feat.getName(), 0.1);
-    }
-    if (modelWeights.isEmpty()) {
-      modelWeights.put("", 0.0);
     }
     nameParams.put("weights", modelWeights);
     return nameParams;

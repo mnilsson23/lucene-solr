@@ -33,7 +33,6 @@ import org.apache.lucene.util.Bits;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrCore;
-import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.request.LocalSolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.search.QParser;
@@ -196,8 +195,9 @@ public class SolrFeature extends Feature {
       final DocIdSetIterator idItr = getDocIdSetIteratorFromQueries(
           queryAndFilters, context);
       if (idItr != null) {
-        return solrScorer == null ? new SolrFeatureFilterOnlyScorer(this, idItr)
-            : new SolrFeatureScorer(this, solrScorer, idItr);
+        return solrScorer == null ? new ValueFeatureScorer(this, 1f, idItr)
+            : new SolrFeatureScorer(this, solrScorer,
+                new SolrFeatureScorerIterator(idItr, solrScorer.iterator()));
       } else {
         return null;
       }
@@ -238,14 +238,11 @@ public class SolrFeature extends Feature {
 
     public class SolrFeatureScorer extends FeatureScorer {
       final private Scorer solrScorer;
-      final private DocIdSetIterator itr;
 
       public SolrFeatureScorer(FeatureWeight weight, Scorer solrScorer,
-          DocIdSetIterator filterIterator) {
-        super(weight);
+          SolrFeatureScorerIterator itr) {
+        super(weight, itr);
         this.solrScorer = solrScorer;
-        itr = new SolrFeatureScorerIterator(filterIterator,
-            solrScorer.iterator());
       }
 
       @Override
@@ -259,84 +256,47 @@ public class SolrFeature extends Feature {
               + name, e);
         }
       }
+      
+    }
 
-      @Override
-      public DocIdSetIterator iterator() {
-        return itr;
+    private class SolrFeatureScorerIterator extends DocIdSetIterator {
+
+      final private DocIdSetIterator filterIterator;
+      final private DocIdSetIterator scorerFilter;
+
+      SolrFeatureScorerIterator(DocIdSetIterator filterIterator,
+          DocIdSetIterator scorerFilter) {
+        this.filterIterator = filterIterator;
+        this.scorerFilter = scorerFilter;
       }
 
       @Override
       public int docID() {
-        return itr.docID();
-      }
-
-      private class SolrFeatureScorerIterator extends DocIdSetIterator {
-
-        final private DocIdSetIterator filterIterator;
-        final private DocIdSetIterator scorerFilter;
-        int docID;
-
-        SolrFeatureScorerIterator(DocIdSetIterator filterIterator,
-            DocIdSetIterator scorerFilter) {
-          this.filterIterator = filterIterator;
-          this.scorerFilter = scorerFilter;
-        }
-
-        @Override
-        public int docID() {
-          return filterIterator.docID();
-        }
-
-        @Override
-        public int nextDoc() throws IOException {
-          docID = filterIterator.nextDoc();
-          scorerFilter.advance(docID);
-          return docID;
-        }
-
-        @Override
-        public int advance(int target) throws IOException {
-          // We use iterator to catch the scorer up since
-          // that checks if the target id is in the query + all the filters
-          docID = filterIterator.advance(target);
-          scorerFilter.advance(docID);
-          return docID;
-        }
-
-        @Override
-        public long cost() {
-          return 0; // FIXME: Make this work?
-        }
-
-      }
-    }
-
-    public class SolrFeatureFilterOnlyScorer extends FeatureScorer {
-      final private DocIdSetIterator itr;
-
-      public SolrFeatureFilterOnlyScorer(FeatureWeight weight,
-          DocIdSetIterator iterator) {
-        super(weight);
-        itr = iterator;
+        return filterIterator.docID();
       }
 
       @Override
-      public float score() throws IOException {
-        return 1f;
+      public int nextDoc() throws IOException {
+        int docID = filterIterator.nextDoc();
+        scorerFilter.advance(docID);
+        return docID;
       }
 
       @Override
-      public DocIdSetIterator iterator() {
-        return itr;
+      public int advance(int target) throws IOException {
+        // We use iterator to catch the scorer up since
+        // that checks if the target id is in the query + all the filters
+        int docID = filterIterator.advance(target);
+        scorerFilter.advance(docID);
+        return docID;
       }
 
       @Override
-      public int docID() {
-        return itr.docID();
+      public long cost() {
+        return 0; // FIXME: Make this work?
       }
 
     }
-
   }
 
 }

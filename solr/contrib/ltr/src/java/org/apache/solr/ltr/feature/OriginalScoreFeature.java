@@ -26,13 +26,10 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-import org.apache.solr.ltr.ranking.Feature;
+import org.apache.solr.ltr.ranking.DocInfo;
 import org.apache.solr.request.SolrQueryRequest;
 
 public class OriginalScoreFeature extends Feature {
-
-  // Name of key used to store the original score of a doc
-  public static final String ORIGINAL_DOC_SCORE = "ORIGINAL_DOC_SCORE";
 
   public OriginalScoreFeature(String name, Map<String,Object> params) {
     super(name, params);
@@ -79,7 +76,7 @@ public class OriginalScoreFeature extends Feature {
       Scorer originalScorer;
 
       public OriginalScoreScorer(FeatureWeight weight, Scorer originalScorer) {
-        super(weight);
+        super(weight,null);
         this.originalScorer = originalScorer;
       }
 
@@ -88,8 +85,8 @@ public class OriginalScoreFeature extends Feature {
         // This is done to improve the speed of feature extraction. Since this
         // was already scored in step 1
         // we shouldn't need to calc original score again.
-        return hasDocParam(ORIGINAL_DOC_SCORE) ? (Float) getDocParam(ORIGINAL_DOC_SCORE)
-            : originalScorer.score();
+        final DocInfo docInfo = getDocInfo();
+        return (docInfo.hasOriginalDocScore() ? docInfo.getOriginalDocScore() : originalScorer.score());
       }
 
       @Override

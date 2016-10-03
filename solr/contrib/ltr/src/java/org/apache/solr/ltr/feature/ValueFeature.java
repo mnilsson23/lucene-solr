@@ -24,7 +24,6 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.solr.ltr.ranking.Feature;
 import org.apache.solr.request.SolrQueryRequest;
 
 public class ValueFeature extends Feature {
@@ -115,7 +114,8 @@ public class ValueFeature extends Feature {
     @Override
     public FeatureScorer scorer(LeafReaderContext context) throws IOException {
       if(featureValue!=null)
-        return new ValueFeatureScorer(this, featureValue);
+        return new ValueFeatureScorer(this, featureValue,
+            DocIdSetIterator.all(DocIdSetIterator.NO_MORE_DOCS));
       else
         return null;
     }
