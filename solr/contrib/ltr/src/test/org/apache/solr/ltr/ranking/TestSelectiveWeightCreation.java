@@ -48,7 +48,6 @@ import org.apache.solr.ltr.model.ModelException;
 import org.apache.solr.ltr.model.RankSVMModel;
 import org.apache.solr.ltr.norm.IdentityNormalizer;
 import org.apache.solr.ltr.norm.Normalizer;
-import org.apache.solr.ltr.ranking.LTRThreadModule;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

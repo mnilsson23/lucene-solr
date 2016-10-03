@@ -140,28 +140,28 @@ public class TestModelQuery extends LuceneTestCase {
         "testModelName",
         features, norms, "testStoreName", allFeatures, modelParams);
 
-    final ModelQuery m1 = new ModelQuery(algorithm1);
-    final ModelQuery m2 = new ModelQuery(algorithm1);
-
-    assertEquals(m1, m2);
-    assertEquals(m1.hashCode(), m2.hashCode());
+    final ModelQuery m0 = new ModelQuery(algorithm1);
 
     final HashMap<String,String[]> externalFeatureInfo = new HashMap<>();
     externalFeatureInfo.put("queryIntent", new String[] {"company"});
     externalFeatureInfo.put("user_query", new String[] {"abc"});
-    m2.setExternalFeatureInfo(externalFeatureInfo);
-
-    assertFalse(m1.equals(m2));
-    assertFalse(m1.hashCode() == m2.hashCode());
+    final ModelQuery m1 = new ModelQuery(algorithm1, externalFeatureInfo, false);
 
     final HashMap<String,String[]> externalFeatureInfo2 = new HashMap<>();
     externalFeatureInfo2.put("user_query", new String[] {"abc"});
     externalFeatureInfo2.put("queryIntent", new String[] {"company"});
-    m1.setExternalFeatureInfo(externalFeatureInfo2);
+    final ModelQuery m2 = new ModelQuery(algorithm1, externalFeatureInfo2, false);
 
+
+    // Models with same algorithm and efis, just in different order should be the same
     assertEquals(m1, m2);
     assertEquals(m1.hashCode(), m2.hashCode());
 
+    // Models with same algorithm, but different efi content should not match
+    assertFalse(m1.equals(m0));
+    assertFalse(m1.hashCode() == m0.hashCode());
+    
+    
     final LTRScoringModel algorithm2 = RankSVMModel.create(
         "testModelName2",
         features, norms, "testStoreName", allFeatures, modelParams);

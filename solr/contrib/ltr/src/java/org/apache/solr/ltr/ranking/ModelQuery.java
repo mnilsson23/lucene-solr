@@ -16,18 +16,19 @@
  */
 package org.apache.solr.ltr.ranking;
 
-import java.util.concurrent.Future;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.Semaphore;
@@ -49,7 +50,6 @@ import org.apache.solr.ltr.feature.Feature.FeatureWeight.FeatureScorer;
 import org.apache.solr.ltr.log.FeatureLogger;
 import org.apache.solr.ltr.model.LTRScoringModel;
 import org.apache.solr.request.SolrQueryRequest;
-import org.apache.solr.ltr.ranking.LTRThreadModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,18 +70,25 @@ public class ModelQuery extends Query {
   protected FeatureLogger<?> fl;
   // Map of external parameters, such as query intent, that can be used by
   // features
-  protected Map<String,String[]> efi;
+  protected final Map<String,String[]> efi;
   // Original solr query used to fetch matching documents
   protected Query originalQuery;
   // Original solr request
   protected SolrQueryRequest request;
 
   public ModelQuery(LTRScoringModel ltrScoringModel) {
-    this(ltrScoringModel, false);
+    this(ltrScoringModel, Collections.emptyMap(), false);
   }
 
   public ModelQuery(LTRScoringModel ltrScoringModel, boolean extractAllFeatures) {
+    this(ltrScoringModel, Collections.emptyMap(), extractAllFeatures);
+  }
+
+  public ModelQuery(LTRScoringModel ltrScoringModel, 
+      Map<String,String[]> externalFeatureInfo, 
+      boolean extractAllFeatures) {
     this.ltrScoringModel = ltrScoringModel;
+    this.efi = externalFeatureInfo;
     this.extractAllFeatures = extractAllFeatures; 
     querySemaphore = new Semaphore(LTRThreadModule.getMaxQueryThreads());
   }
@@ -104,10 +111,6 @@ public class ModelQuery extends Query {
 
   public Query getOriginalQuery() {
     return originalQuery;
-  }
-
-  public void setExternalFeatureInfo(Map<String,String[]> externalFeatureInfo) {
-    efi = externalFeatureInfo;
   }
 
   public Map<String,String[]> getExternalFeatureInfo() {
@@ -252,6 +255,7 @@ public class ModelQuery extends Query {
       this.req = req;
     }
 
+    @Override
     public FeatureWeight call() throws Exception{
       try {
         FeatureWeight fw  = f.createWeight(searcher, needsScores, req, originalQuery, efi);
