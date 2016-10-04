@@ -32,28 +32,24 @@ public class LambdaMARTModel extends LTRScoringModel {
   private final HashMap<String,Integer> fname2index;
   private List<RegressionTree> trees;
 
-  public static RegressionTree createRegressionTree(Map<String,Object> map,
-      HashMap<String,Integer> fname2index) {
-    final RegressionTree rt = new RegressionTree(fname2index);
+  private RegressionTree createRegressionTree(Map<String,Object> map) {
+    final RegressionTree rt = new RegressionTree();
     if (map != null) {
       SolrPluginUtils.invokeSetters(rt, map.entrySet());
     }
     return rt;
   }
 
-  public static RegressionTreeNode createRegressionTreeNode(Map<String,Object> map,
-      HashMap<String,Integer> fname2index) {
-    final RegressionTreeNode rtn = new RegressionTreeNode(fname2index);
+  private RegressionTreeNode createRegressionTreeNode(Map<String,Object> map) {
+    final RegressionTreeNode rtn = new RegressionTreeNode();
     if (map != null) {
       SolrPluginUtils.invokeSetters(rtn, map.entrySet());
     }
     return rtn;
   }
 
-  public static class RegressionTreeNode {
+  public class RegressionTreeNode {
     private static final float NODE_SPLIT_SLACK = 1E-6f;
-
-    private final HashMap<String,Integer> fname2index;
 
     private float value = 0f;
     private String feature;
@@ -91,11 +87,11 @@ public class LambdaMARTModel extends LTRScoringModel {
     }
 
     public void setLeft(Object left) {
-      this.left = createRegressionTreeNode((Map<String,Object>) left, fname2index);
+      this.left = createRegressionTreeNode((Map<String,Object>) left);
     }
 
     public void setRight(Object right) {
-      this.right = createRegressionTreeNode((Map<String,Object>) right, fname2index);
+      this.right = createRegressionTreeNode((Map<String,Object>) right);
     }
 
     public boolean isLeaf() {
@@ -163,8 +159,7 @@ public class LambdaMARTModel extends LTRScoringModel {
       return sb.toString();
     }
 
-    public RegressionTreeNode(HashMap<String,Integer> fname2index) throws ModelException {
-      this.fname2index = fname2index;
+    public RegressionTreeNode() {
     }
 
     public void validate() throws ModelException {
@@ -191,9 +186,7 @@ public class LambdaMARTModel extends LTRScoringModel {
 
   }
 
-  public static class RegressionTree {
-
-    private final HashMap<String,Integer> fname2index;
+  public class RegressionTree {
 
     private Float weight;
     private RegressionTreeNode root;
@@ -207,7 +200,7 @@ public class LambdaMARTModel extends LTRScoringModel {
     }
 
     public void setTree(Object root) {
-      this.root = createRegressionTreeNode((Map<String,Object>)root, fname2index);
+      this.root = createRegressionTreeNode((Map<String,Object>)root);
     }
 
     public float score(float[] featureVector) {
@@ -227,8 +220,7 @@ public class LambdaMARTModel extends LTRScoringModel {
       return sb.toString();
     }
 
-    public RegressionTree(HashMap<String,Integer> fname2index) throws ModelException {
-      this.fname2index = fname2index;
+    public RegressionTree() {
     }
 
     public void validate() throws ModelException {
@@ -247,7 +239,7 @@ public class LambdaMARTModel extends LTRScoringModel {
     if (trees != null) {
       this.trees = new ArrayList<RegressionTree>();
       for (final Object o : (List<Object>) trees) {
-        final RegressionTree rt = createRegressionTree((Map<String,Object>) o, this.fname2index);
+        final RegressionTree rt = createRegressionTree((Map<String,Object>) o);
         this.trees.add(rt);
       }
     } else {
@@ -258,7 +250,7 @@ public class LambdaMARTModel extends LTRScoringModel {
   public LambdaMARTModel(String name, List<Feature> features,
       List<Normalizer> norms,
       String featureStoreName, List<Feature> allFeatures,
-      Map<String,Object> params) throws ModelException {
+      Map<String,Object> params) {
     super(name, features, norms, featureStoreName, allFeatures, params);
 
     fname2index = new HashMap<String,Integer>();
