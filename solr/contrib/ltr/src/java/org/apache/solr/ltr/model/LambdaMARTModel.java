@@ -72,9 +72,6 @@ public class LambdaMARTModel extends LTRScoringModel {
       // this happens if the tree specifies a feature that does not exist
       // this could be due to lambdaSmart building off of pre-existing trees
       // that use a feature that is no longer output during feature extraction
-      // TODO: make lambdaSmart (in rank_svm_final repo )
-      // either remove trees that depend on such features
-      // or prune them back above the split on that feature
       featureIndex = (idx == null) ? -1 : idx;
     }
 
@@ -109,9 +106,9 @@ public class LambdaMARTModel extends LTRScoringModel {
       }
 
       if (featureVector[featureIndex] <= threshold) {
-        return (left == null ? 0f : left.score(featureVector));
+        return left.score(featureVector);
       } else {
-        return (right == null ? 0f : right.score(featureVector));
+        return right.score(featureVector);
       }
     }
 
@@ -147,11 +144,7 @@ public class LambdaMARTModel extends LTRScoringModel {
         sb.append(value);
       } else {
         sb.append("(feature=").append(feature);
-        if (threshold != null) {
-          sb.append(",threshold=").append(threshold.floatValue()-NODE_SPLIT_SLACK);
-        } else {
-          sb.append(",threshold=").append(threshold);
-        }
+        sb.append(",threshold=").append(threshold.floatValue()-NODE_SPLIT_SLACK);
         sb.append(",left=").append(left);
         sb.append(",right=").append(right);
         sb.append(')');
@@ -204,11 +197,11 @@ public class LambdaMARTModel extends LTRScoringModel {
     }
 
     public float score(float[] featureVector) {
-      return (weight == null || root == null ? 0f : weight.floatValue() * root.score(featureVector));
+      return weight.floatValue() * root.score(featureVector);
     }
 
     public String explain(float[] featureVector) {
-      return (root == null ? "tree missing" : root.explain(featureVector));
+      return root.explain(featureVector);
     }
 
     @Override
@@ -315,16 +308,12 @@ public class LambdaMARTModel extends LTRScoringModel {
   public String toString() {
     final StringBuilder sb = new StringBuilder(getClass().getSimpleName());
     sb.append("(name=").append(getName());
-    if (trees != null) {
     sb.append(",trees=[");
     for (int ii = 0; ii < trees.size(); ++ii) {
       if (ii>0) sb.append(',');
       sb.append(trees.get(ii));
     }
     sb.append("])");
-    } else {
-      sb.append(",trees=null)");
-    }
     return sb.toString();
   }
 
