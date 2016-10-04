@@ -46,7 +46,7 @@ import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.feature.FieldValueFeature;
 import org.apache.solr.ltr.model.LTRScoringModel;
-import org.apache.solr.ltr.model.RankSVMModel;
+import org.apache.solr.ltr.model.TestRankSVMModel;
 import org.apache.solr.ltr.norm.IdentityNormalizer;
 import org.apache.solr.ltr.norm.Normalizer;
 import org.apache.solr.ltr.ranking.ModelQuery.ModelWeight;
@@ -149,7 +149,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     final List<Feature> allFeatures = makeFieldValueFeatures(new int[] {0, 1,
         2, 3, 4, 5, 6, 7, 8, 9}, "final-score");
-    final RankSVMModel meta = RankSVMModel.create("test",
+    final LTRScoringModel meta = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures, null);
 
     final LTRRescorer rescorer = new LTRRescorer(new ModelQuery(meta));
@@ -229,7 +229,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     final List<Feature> allFeatures = makeFieldValueFeatures(new int[] {0, 1,
         2, 3, 4, 5, 6, 7, 8, 9}, "final-score");
-    final RankSVMModel meta = RankSVMModel.create("test",
+    final LTRScoringModel meta = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures, null);
 
     final LTRRescorer rescorer = new LTRRescorer(new ModelQuery(meta));

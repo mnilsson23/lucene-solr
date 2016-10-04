@@ -35,7 +35,6 @@ import org.apache.solr.ltr.ranking.ModelQuery;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.store.rest.ManagedFeatureStore;
 import org.apache.solr.ltr.store.rest.ManagedModelStore;
-import org.apache.solr.ltr.util.LTRUtils;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.transform.LTRFeatureLoggerTransformerFactory;
 import org.apache.solr.rest.ManagedResource;
@@ -81,10 +80,22 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
    **/
   public static final String RERANK_DOCS = "reRankDocs";
 
+  private static int getInt(Object thObj, int defValue, String paramName) throws NumberFormatException{
+    if (thObj != null) {
+      try{
+        return Integer.parseInt(thObj.toString());
+      }catch(NumberFormatException nfe){
+        String errorStr = nfe.toString() + ":" + paramName + " not an integer";
+        throw new NumberFormatException(errorStr);
+      }
+    }
+    return defValue;
+  }
+
   @Override
   public void init(@SuppressWarnings("rawtypes") NamedList args) {
-    int maxThreads  = LTRUtils.getInt(args.get("LTRMaxThreads"), LTRThreadModule.DEFAULT_MAX_THREADS, "LTRMaxThreads");
-    int maxQueryThreads = LTRUtils.getInt(args.get("LTRMaxQueryThreads"), LTRThreadModule.DEFAULT_MAX_QUERYTHREADS, "LTRMaxQueryThreads");
+    int maxThreads  = getInt(args.get("LTRMaxThreads"), LTRThreadModule.DEFAULT_MAX_THREADS, "LTRMaxThreads");
+    int maxQueryThreads = getInt(args.get("LTRMaxQueryThreads"), LTRThreadModule.DEFAULT_MAX_QUERYTHREADS, "LTRMaxQueryThreads");
     LTRThreadModule.setThreads(maxThreads, maxQueryThreads);
     LTRThreadModule.initSemaphore();
   }
@@ -141,7 +152,7 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
         mr = (ManagedModelStore)res;
     }
     if (mr != null && fr != null){
-        mr.init(fr);
+        mr.setManagedFeatureStore(fr);
         // now we can safely load the models
         mr.loadStoredModels();
 
