@@ -58,15 +58,15 @@ public class ManagedModelStore extends ManagedResource implements
   private static final String MODELS_JSON_FIELD = "models";
 
   /** name of the attribute containing a class **/
-  public static final String CLASS_KEY = "class";
+  private static final String CLASS_KEY = "class";
   /** name of the attribute containing the features **/
   private static final String FEATURES_KEY = "features";
   /** name of the attribute containing a name **/
-  public static final String NAME_KEY = "name";
+  private static final String NAME_KEY = "name";
   /** name of the attribute containing a normalizer **/
   private static final String NORM_KEY = "norm";
   /** name of the attribute containing parameters **/
-  public static final String PARAMS_KEY = "params";
+  private static final String PARAMS_KEY = "params";
   /** name of the attribute containing a store **/
   private static final String STORE_KEY = "store";
 
@@ -230,8 +230,8 @@ public class ManagedModelStore extends ManagedResource implements
     if (featureList != null) {
       for (final Object feature : featureList) {
         final Map<String,Object> featureMap = (Map<String,Object>) feature;
-        features.add(featureFromFeatureMap(solrResourceLoader, featureMap, featureStore));
-        norms.add(normalizerFromFeatureMap(solrResourceLoader, featureMap));
+        features.add(lookupFeatureFromFeatureMap(featureMap, featureStore));
+        norms.add(createNormalizerFromFeatureMap(solrResourceLoader, featureMap));
       }
     }
 
@@ -273,15 +273,15 @@ public class ManagedModelStore extends ManagedResource implements
     return modelMap;
   }
 
-  private static Feature featureFromFeatureMap(SolrResourceLoader solrResourceLoader,
-      Map<String,Object> featureMap, FeatureStore featureStore) {
+  private static Feature lookupFeatureFromFeatureMap(Map<String,Object> featureMap,
+      FeatureStore featureStore) {
     final String featureName = (String)featureMap.get(NAME_KEY);
     return (featureName == null ? null
         : featureStore.get(featureName));
   }
 
   @SuppressWarnings("unchecked")
-  private static Normalizer normalizerFromFeatureMap(SolrResourceLoader solrResourceLoader,
+  private static Normalizer createNormalizerFromFeatureMap(SolrResourceLoader solrResourceLoader,
       Map<String,Object> featureMap) {
     final Map<String,Object> normMap = (Map<String,Object>)featureMap.get(NORM_KEY);
     return  (normMap == null ? IdentityNormalizer.INSTANCE
@@ -295,8 +295,7 @@ public class ManagedModelStore extends ManagedResource implements
     return map;
   }
 
-  // TODO: make this private again later
-  public static Normalizer fromNormalizerMap(SolrResourceLoader solrResourceLoader,
+  private static Normalizer fromNormalizerMap(SolrResourceLoader solrResourceLoader,
       Map<String,Object> normMap) {
     final String className = (String) normMap.get(CLASS_KEY);
 

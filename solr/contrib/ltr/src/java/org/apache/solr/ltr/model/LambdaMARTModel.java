@@ -236,14 +236,10 @@ public class LambdaMARTModel extends LTRScoringModel {
   }
 
   public void setTrees(Object trees) {
-    if (trees != null) {
-      this.trees = new ArrayList<RegressionTree>();
-      for (final Object o : (List<Object>) trees) {
-        final RegressionTree rt = createRegressionTree((Map<String,Object>) o);
-        this.trees.add(rt);
-      }
-    } else {
-      this.trees = null;
+    this.trees = new ArrayList<RegressionTree>();
+    for (final Object o : (List<Object>) trees) {
+      final RegressionTree rt = createRegressionTree((Map<String,Object>) o);
+      this.trees.add(rt);
     }
   }
 

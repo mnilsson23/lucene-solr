@@ -31,12 +31,10 @@ public class RankSVMModel extends LTRScoringModel {
 
   public void setWeights(Object weights) {
     final Map<String,Double> modelWeights = (Map<String,Double>) weights;
-    if (modelWeights != null) {
-      for (int ii = 0; ii < features.size(); ++ii) {
-        final String key = features.get(ii).getName();
-        final Double val = modelWeights.get(key);
-        featureToWeight[ii] = (val == null ? null : new Float(val.floatValue()));
-      }
+    for (int ii = 0; ii < features.size(); ++ii) {
+      final String key = features.get(ii).getName();
+      final Double val = modelWeights.get(key);
+      featureToWeight[ii] = (val == null ? null : new Float(val.floatValue()));
     }
   }
 

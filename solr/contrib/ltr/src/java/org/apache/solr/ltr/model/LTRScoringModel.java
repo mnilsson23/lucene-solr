@@ -95,6 +95,9 @@ public abstract class LTRScoringModel {
         throw new ModelException("duplicated feature "+featureName+" in model "+name);
       }
     }
+    if (features.size() != norms.size()) {
+      throw new ModelException("counted "+features.size()+" features and "+norms.size()+" norms in model "+name);
+    }
   }
 
   /**
