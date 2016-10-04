@@ -191,7 +191,7 @@ public abstract class LTRScoringModel {
   }
 
   public Collection<Feature> getAllFeatures() {
-    return Collections.unmodifiableList(allFeatures);
+    return allFeatures;
   }
 
   public String getFeatureStoreName() {
