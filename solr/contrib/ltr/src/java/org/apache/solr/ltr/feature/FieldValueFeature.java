@@ -65,7 +65,6 @@ public class FieldValueFeature extends Feature {
     return new FieldValueFeatureWeight(searcher, request, originalQuery, efi);
   }
 
-
   public class FieldValueFeatureWeight extends FeatureWeight {
 
     public FieldValueFeatureWeight(IndexSearcher searcher, 
@@ -97,9 +96,7 @@ public class FieldValueFeature extends Feature {
               fieldAsSet);
           final IndexableField indexableField = document.getField(field);
           if (indexableField == null) {
-            // logger.debug("no field {}", f);
-            // TODO define default value
-            return 0;
+            return getDefaultValue();
           }
           final Number number = indexableField.numericValue();
           if (number != null) {
@@ -120,10 +117,8 @@ public class FieldValueFeature extends Feature {
           // do we want to return a default value?
           // do we want to fail?
         }
-        // TODO define default value
-        return 0;
+        return getDefaultValue();
       }
     }
   }
-
 }

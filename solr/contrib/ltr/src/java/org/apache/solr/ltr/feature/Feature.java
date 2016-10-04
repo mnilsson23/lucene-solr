@@ -42,6 +42,7 @@ public abstract class Feature extends Query {
 
   final protected String name;
   private int index = -1;
+  private float defaultValue = 0.0f;
 
   final private Map<String,Object> params;
 
@@ -79,6 +80,15 @@ public abstract class Feature extends Query {
 
   public abstract FeatureWeight createWeight(IndexSearcher searcher,
       boolean needsScores, SolrQueryRequest request, Query originalQuery, Map<String,String[]> efi) throws IOException;
+
+  public float getDefaultValue() {
+    return defaultValue;
+  }
+
+  public void setDefaultValue(String value){
+    defaultValue = Float.parseFloat(value);
+  }
+
 
   @Override
   public int hashCode() {
@@ -180,7 +190,7 @@ public abstract class Feature extends Query {
     }
 
     public float getDefaultValue() {
-      return 0;
+      return Feature.this.getDefaultValue();
     }
 
     @Override
