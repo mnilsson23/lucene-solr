@@ -235,22 +235,14 @@ public class ManagedModelStore extends ManagedResource implements
       }
     }
 
-    LTRScoringModel model;
-    try {
-      model = LTRScoringModel.getInstance(solrResourceLoader,
-          (String) modelMap.get(CLASS_KEY), // modelClassName
-          (String) modelMap.get(NAME_KEY), // modelName
-          features,
-          norms,
-          featureStore.getName(),
-          featureStore.getFeatures(),
-          (Map<String,Object>) modelMap.get(PARAMS_KEY));
-    } catch (ModelException ex) {
-      log.info("ModelException {}", ex);
-      throw ex;
-    }
-
-    return model;
+    return LTRScoringModel.getInstance(solrResourceLoader,
+        (String) modelMap.get(CLASS_KEY), // modelClassName
+        (String) modelMap.get(NAME_KEY), // modelName
+        features,
+        norms,
+        featureStore.getName(),
+        featureStore.getFeatures(),
+        (Map<String,Object>) modelMap.get(PARAMS_KEY));
   }
 
   private static LinkedHashMap<String,Object> toLTRScoringModelMap(LTRScoringModel model) {
