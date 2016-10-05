@@ -74,7 +74,7 @@ BONUS: Train an actual machine learning model
 
   `cd  contrib/ltr/example`
 
-  `python ltr_generateModel.py -c config.json`
+  `python  train_and_upload_demo_model.py -c config.json`
 
    This script deploys your features from `config.json` "featuresFile" to Solr.  Then it takes the relevance judged query
    document pairs of "userQueriesFile" and merges it with the features extracted from Solr into a training
@@ -372,7 +372,7 @@ CrowdFlower. These platforms allow you to show human workers documents associate
 tell you what the correct ranking should be.
 
 At this point you'll need to collect feature vectors for each query document pair. You can use the information
-from the Extract features section above to do this. An example script has been included in example/ltr_generateModel.py.
+from the Extract features section above to do this. An example script has been included in example/train_and_upload_demo_model.py.
 
 # Explanation of the core reranking logic
 An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQParserPlugin.java). The plugin will
