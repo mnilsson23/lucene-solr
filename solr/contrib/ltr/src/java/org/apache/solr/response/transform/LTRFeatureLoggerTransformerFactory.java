@@ -30,8 +30,8 @@ import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.ltr.FeatureLogger;
 import org.apache.solr.ltr.LTRRescorer;
-import org.apache.solr.ltr.ModelQuery;
-import org.apache.solr.ltr.ModelQuery.ModelWeight;
+import org.apache.solr.ltr.LTRScoringQuery;
+import org.apache.solr.ltr.LTRScoringQuery.ModelWeight;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.SolrQueryRequestContextUtils;
 import org.apache.solr.ltr.model.LTRScoringModel;
@@ -104,7 +104,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
 
     private List<LeafReaderContext> leafContexts;
     private SolrIndexSearcher searcher;
-    private ModelQuery reRankModel;
+    private LTRScoringQuery scoringQuery;
     private ModelWeight modelWeight;
     private FeatureLogger<?> featureLogger;
     private boolean docsWereNotReranked;
@@ -144,11 +144,11 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
       }
       leafContexts = searcher.getTopReaderContext().leaves();
 
-      // Setup ModelQuery
-      reRankModel = SolrQueryRequestContextUtils.getModelQuery(req);
-      docsWereNotReranked = (reRankModel == null);
+      // Setup LTRScoringQuery
+      scoringQuery = SolrQueryRequestContextUtils.getScoringQuery(req);
+      docsWereNotReranked = (scoringQuery == null);
       String featureStoreName = SolrQueryRequestContextUtils.getFvStoreName(req);
-      if (docsWereNotReranked || (featureStoreName != null && (!featureStoreName.equals(reRankModel.getScoringModel().getFeatureStoreName())))) {
+      if (docsWereNotReranked || (featureStoreName != null && (!featureStoreName.equals(scoringQuery.getScoringModel().getFeatureStoreName())))) {
         // if store is set in the transformer we should overwrite the logger
 
         final ManagedFeatureStore fr = (ManagedFeatureStore) req.getCore().getRestManager()
@@ -161,12 +161,12 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
           final LoggingModel lm = new LoggingModel(loggingModelName,
               featureStoreName, store.getFeatures());
           
-          reRankModel = new ModelQuery(lm, 
+          scoringQuery = new LTRScoringQuery(lm, 
               LTRQParserPlugin.extractEFIParams(params), 
               true, SolrQueryRequestContextUtils.getThreadManager(req)); // request feature weights to be created for all features
 
           // Local transformer efi if provided
-          reRankModel.setOriginalQuery(context.getQuery());
+          scoringQuery.setOriginalQuery(context.getQuery());
 
         }catch (final Exception e) {
           throw new SolrException(ErrorCode.BAD_REQUEST,
@@ -174,15 +174,15 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
         }
       }
 
-      if (reRankModel.getFeatureLogger() == null){
-        reRankModel.setFeatureLogger( SolrQueryRequestContextUtils.getFeatureLogger(req) );
+      if (scoringQuery.getFeatureLogger() == null){
+        scoringQuery.setFeatureLogger( SolrQueryRequestContextUtils.getFeatureLogger(req) );
       }
-      reRankModel.setRequest(req);
+      scoringQuery.setRequest(req);
 
-      featureLogger = reRankModel.getFeatureLogger();
+      featureLogger = scoringQuery.getFeatureLogger();
 
       try {
-        modelWeight = reRankModel.createWeight(searcher, true, 1f);
+        modelWeight = scoringQuery.createWeight(searcher, true, 1f);
       } catch (final IOException e) {
         throw new SolrException(ErrorCode.BAD_REQUEST, e.getMessage(), e);
       }
@@ -195,7 +195,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
     @Override
     public void transform(SolrDocument doc, int docid, float score)
         throws IOException {
-      Object fv = featureLogger.getFeatureVector(docid, reRankModel, searcher);
+      Object fv = featureLogger.getFeatureVector(docid, scoringQuery, searcher);
       if (fv == null) { // FV for this document was not in the cache
         fv = featureLogger.makeFeatureVector(
             LTRRescorer.extractFeaturesInfo(

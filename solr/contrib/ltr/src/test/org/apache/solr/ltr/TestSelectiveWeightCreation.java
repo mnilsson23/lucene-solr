@@ -40,7 +40,7 @@ import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.ltr.ModelQuery;
+import org.apache.solr.ltr.LTRScoringQuery;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.feature.ValueFeature;
 import org.apache.solr.ltr.model.LTRScoringModel;
@@ -83,8 +83,8 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     return nameParams;
   }
 
-  private ModelQuery.ModelWeight performQuery(TopDocs hits,
-      IndexSearcher searcher, int docid, ModelQuery model) throws IOException,
+  private LTRScoringQuery.ModelWeight performQuery(TopDocs hits,
+      IndexSearcher searcher, int docid, LTRScoringQuery model) throws IOException,
       ModelException {
     final List<LeafReaderContext> leafContexts = searcher.getTopReaderContext()
         .leaves();
@@ -98,8 +98,8 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     // rerank using the field final-score
     scorer.iterator().advance(deBasedDoc);
     scorer.score();
-    assertTrue(weight instanceof ModelQuery.ModelWeight);
-    final ModelQuery.ModelWeight modelWeight = (ModelQuery.ModelWeight) weight;
+    assertTrue(weight instanceof LTRScoringQuery.ModelWeight);
+    final LTRScoringQuery.ModelWeight modelWeight = (LTRScoringQuery.ModelWeight) weight;
     return modelWeight;
 
   }
@@ -132,7 +132,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
   }
  
   @Test
-  public void testModelQueryWeightCreation() throws IOException, ModelException {
+  public void testScoringQueryWeightCreation() throws IOException, ModelException {
     final Directory dir = newDirectory();
     final RandomIndexWriter w = new RandomIndexWriter(random(), dir);
 
@@ -177,8 +177,8 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     final LTRScoringModel ltrScoringModel1 = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
-    ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(ltrScoringModel1, false)); // features not requested in response
+    LTRScoringQuery.ModelWeight modelWeight = performQuery(hits, searcher,
+        hits.scoreDocs[0].doc, new LTRScoringQuery(ltrScoringModel1, false)); // features not requested in response
     
     assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
     int validFeatures = 0;
@@ -194,7 +194,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(ltrScoringModel2, true)); // features requested in response
+        hits.scoreDocs[0].doc, new LTRScoringQuery(ltrScoringModel2, true)); // features requested in response
 
     assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
     assertEquals(allFeatures.size(), modelWeight.extractedFeatureWeights.length);

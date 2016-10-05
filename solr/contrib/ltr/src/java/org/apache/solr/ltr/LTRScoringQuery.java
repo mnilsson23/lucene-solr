@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * The ranking query that is run, reranking results using the
  * LTRScoringModel algorithm
  */
-public class ModelQuery extends Query {
+public class LTRScoringQuery extends Query {
 
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -76,15 +76,15 @@ public class ModelQuery extends Query {
   protected SolrQueryRequest request;
   protected LTRThreadModule ltrThreadMgr = null;
 
-  public ModelQuery(LTRScoringModel ltrScoringModel) {
+  public LTRScoringQuery(LTRScoringModel ltrScoringModel) {
     this(ltrScoringModel, Collections.<String,String[]>emptyMap(), false, null);
   }
 
-  public ModelQuery(LTRScoringModel ltrScoringModel, boolean extractAllFeatures) {
+  public LTRScoringQuery(LTRScoringModel ltrScoringModel, boolean extractAllFeatures) {
     this(ltrScoringModel, Collections.<String, String[]>emptyMap(), extractAllFeatures, null);
   }
 
-  public ModelQuery(LTRScoringModel ltrScoringModel, 
+  public LTRScoringQuery(LTRScoringModel ltrScoringModel, 
       Map<String, String[]> externalFeatureInfo, 
       boolean extractAllFeatures, LTRThreadModule threadMgr) {
     this.ltrScoringModel = ltrScoringModel;
@@ -158,7 +158,7 @@ public class ModelQuery extends Query {
     return sameClassAs(o) &&  equalsTo(getClass().cast(o));
   }
 
-  private boolean equalsTo(ModelQuery other) {
+  private boolean equalsTo(LTRScoringQuery other) {
     if (ltrScoringModel == null) {
       if (other.ltrScoringModel != null) {
         return false;
@@ -371,7 +371,7 @@ public class ModelQuery extends Query {
      */
     public ModelWeight(IndexSearcher searcher, FeatureWeight[] modelFeatureWeights,
         FeatureWeight[] extractedFeatureWeights, int allFeaturesSize) {
-      super(ModelQuery.this);
+      super(LTRScoringQuery.this);
       this.searcher = searcher;
       this.extractedFeatureWeights = extractedFeatureWeights;
       this.modelFeatureWeights = modelFeatureWeights;
@@ -522,7 +522,7 @@ public class ModelQuery extends Query {
 
       public class SparseModelScorer extends Scorer {
         protected DisiPriorityQueue subScorers;
-        protected ModelQuerySparseIterator itr;
+        protected ScoringQuerySparseIterator itr;
 
         protected int targetDoc = -1;
         protected int activeDoc = -1;
@@ -540,7 +540,7 @@ public class ModelQuery extends Query {
             subScorers.add(w);
           }
 
-          itr = new ModelQuerySparseIterator(subScorers);
+          itr = new ScoringQuerySparseIterator(subScorers);
         }
 
         @Override
@@ -594,10 +594,10 @@ public class ModelQuery extends Query {
           return children;
         }
 
-        protected class ModelQuerySparseIterator extends
+        protected class ScoringQuerySparseIterator extends
         DisjunctionDISIApproximation {
 
-          public ModelQuerySparseIterator(DisiPriorityQueue subIterators) {
+          public ScoringQuerySparseIterator(DisiPriorityQueue subIterators) {
             super(subIterators);
           }
 
