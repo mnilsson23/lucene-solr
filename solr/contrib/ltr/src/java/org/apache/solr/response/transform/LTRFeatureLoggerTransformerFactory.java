@@ -156,14 +156,14 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
 
         final FeatureStore store = fr.getFeatureStore(featureStoreName);
         featureStoreName = store.getName(); // if featureStoreName was null before this gets actual name
-
+        
         try {
           final LoggingModel lm = new LoggingModel(loggingModelName,
               featureStoreName, store.getFeatures());
-
+          
           reRankModel = new ModelQuery(lm, 
               LTRQParserPlugin.extractEFIParams(params), 
-              true); // request feature weights to be created for all features
+              true, SolrQueryRequestContextUtils.getThreadManager(req)); // request feature weights to be created for all features
 
           // Local transformer efi if provided
           reRankModel.setOriginalQuery(context.getQuery());

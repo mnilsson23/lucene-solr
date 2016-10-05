@@ -69,6 +69,7 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
 
   private ManagedFeatureStore fr = null;
   private ManagedModelStore mr = null;
+  private LTRThreadModule threadManager = null;
 
   /** query parser plugin: the name of the attribute for setting the model **/
   public static final String MODEL = "model";
@@ -98,14 +99,18 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
   public void init(@SuppressWarnings("rawtypes") NamedList args) {
     int maxThreads  = getInt(args.get("LTRMaxThreads"), LTRThreadModule.DEFAULT_MAX_THREADS, "LTRMaxThreads");
     int maxQueryThreads = getInt(args.get("LTRMaxQueryThreads"), LTRThreadModule.DEFAULT_MAX_QUERYTHREADS, "LTRMaxQueryThreads");
-    LTRThreadModule.setThreads(maxThreads, maxQueryThreads);
-    LTRThreadModule.initSemaphore();
+    threadManager = new LTRThreadModule(maxThreads, maxQueryThreads);
   }
-
+  
   @Override
   public QParser createParser(String qstr, SolrParams localParams,
       SolrParams params, SolrQueryRequest req) {
+    SolrQueryRequestContextUtils.setThreadManager(req, threadManager);
     return new LTRQParser(qstr, localParams, params, req);
+  }
+  
+  public LTRThreadModule getThreadMgr(){
+    return threadManager;
   }
   
   /**
@@ -194,7 +199,7 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
       
       final ModelQuery reRankModel = new ModelQuery(ltrScoringModel, 
           extractEFIParams(localParams), 
-          featuresRequestedFromSameStore);
+          featuresRequestedFromSameStore, getThreadMgr());
 
       // Enable the feature vector caching if we are extracting features, and the features
       // we requested are the same ones we are reranking with 
