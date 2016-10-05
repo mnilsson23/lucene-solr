@@ -372,13 +372,7 @@ CrowdFlower. These platforms allow you to show human workers documents associate
 tell you what the correct ranking should be.
 
 At this point you'll need to collect feature vectors for each query document pair. You can use the information
-<<<<<<< HEAD
 from the Extract features section above to do this. An example script has been included in example/train_and_upload_demo_model.py.
-||||||| merged common ancestors
-from the Extract features section above to do this. An example script has been included in scripts/ltr_generateModel.py.
-=======
-from the Extract features section above to do this. An example script has been included in example/ltr_generateModel.py.
->>>>>>> master-ltr-plugin-develop
 
 # Explanation of the core reranking logic
 An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQParserPlugin.java). The plugin will
