@@ -378,7 +378,6 @@ public class TestRerankBase extends RestTestBase {
   }
 
   protected static void bulkIndex() throws Exception {
-    System.out.println("-----------index ---------------------");
     assertU(adoc("title", "bloomberg different bla", "description",
         "bloomberg", "id", "6", "popularity", "1"));
     assertU(adoc("title", "bloomberg bloomberg ", "description", "bloomberg",
