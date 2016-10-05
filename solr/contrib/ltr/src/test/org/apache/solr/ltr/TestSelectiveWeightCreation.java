@@ -221,10 +221,9 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     query.setQuery("*:*");
     query.add("fl", "*,score");
     query.add("rows", "4");
-  
     query.add("rq", "{!ltr reRankDocs=4 model=externalmodel efi.user_query=w3}");
     query.add("fl", "fv:[fv]");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
+
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[1]/id=='3'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[2]/id=='4'");
@@ -235,7 +234,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     query.add("fl", "*,score");
     query.add("rq", "{!ltr reRankDocs=4 model=externalmodel efi.user_query=w3}");
     query.add("fl", "fv:[fv store=fstore4 efi.myPop=3]");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
+
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/score==0.999");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fv=='popularity:3.0;originalScore:1.0'"); // extract all features from fstore4
@@ -246,7 +245,6 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     query.add("fl", "*,score");
     query.add("rq", "{!ltr reRankDocs=4 model=externalmodelstore efi.user_query=w3 efi.myconf=0.8}");
     query.add("fl", "fv:[fv store=fstore4 efi.myPop=3]");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'"); // score using fstore2 used by externalmodelstore
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/score==0.7992");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fv=='popularity:3.0;originalScore:1.0'"); // extract all features from fstore4
@@ -261,7 +259,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     query.add("rows", "4");
   
     query.add("rq", "{!ltr reRankDocs=4 model=externalmodel efi.user_query=w3}");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
+    
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[1]/id=='3'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[2]/id=='4'");
@@ -269,7 +267,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     
     LTRThreadModule.setThreads(10, 10);
     LTRThreadModule.initSemaphore();
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
+    
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[1]/id=='3'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[2]/id=='4'");

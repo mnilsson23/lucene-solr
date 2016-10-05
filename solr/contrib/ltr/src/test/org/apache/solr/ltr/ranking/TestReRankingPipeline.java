@@ -212,10 +212,6 @@ public class TestReRankingPipeline extends LuceneTestCase {
     // first run the standard query
     TopDocs hits = searcher.search(bqBuilder.build(), 10);
     assertEquals(5, hits.totalHits);
-    for (int i = 0; i < 5; i++) {
-      System.out.print(hits.scoreDocs[i].doc + " -> ");
-      System.out.println(searcher.doc(hits.scoreDocs[i].doc).get("id"));
-    }
 
     assertEquals("0", searcher.doc(hits.scoreDocs[0].doc).get("id"));
     assertEquals("1", searcher.doc(hits.scoreDocs[1].doc).get("id"));
