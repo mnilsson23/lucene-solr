@@ -149,15 +149,15 @@ def main(argv=None):
 def uploadModel(collection, host, port, modelFile):    
     modelUrl = "/solr/" + collection + "/schema/model-store"
     headers = {'Content-type': 'application/json'}
-    modelBody = open(modelFile)
-    conn = httplib.HTTPConnection(host, port)
-    conn.request("POST", modelUrl, modelBody, headers)
-    r = conn.getresponse()
-    msg = r.read()
-    if (r.status != httplib.OK and
-        r.status != httplib.CREATED and
-        r.status != httplib.ACCEPTED):
-            raise Exception("Status: {0} {1}\nResponse: {2}".format(r.status, r.reason, msg))
+    with open(modelFile) as modelBody:
+        conn = httplib.HTTPConnection(host, port)
+        conn.request("POST", modelUrl, modelBody, headers)
+        r = conn.getresponse()
+        msg = r.read()
+        if (r.status != httplib.OK and
+            r.status != httplib.CREATED and
+            r.status != httplib.ACCEPTED):
+                raise Exception("Status: {0} {1}\nResponse: {2}".format(r.status, r.reason, msg))
 
 if __name__ == '__main__':
     sys.exit(main())
