@@ -44,9 +44,9 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.LTRRescorer;
-import org.apache.solr.ltr.ModelQuery;
-import org.apache.solr.ltr.ModelQuery.ModelWeight;
-import org.apache.solr.ltr.ModelQuery.ModelWeight.ModelScorer;
+import org.apache.solr.ltr.LTRScoringQuery;
+import org.apache.solr.ltr.LTRScoringQuery.ModelWeight;
+import org.apache.solr.ltr.LTRScoringQuery.ModelWeight.ModelScorer;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.feature.FieldValueFeature;
 import org.apache.solr.ltr.model.LTRScoringModel;
@@ -153,7 +153,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
     final LTRScoringModel ltrScoringModel = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures, null);
 
-    final LTRRescorer rescorer = new LTRRescorer(new ModelQuery(ltrScoringModel));
+    final LTRRescorer rescorer = new LTRRescorer(new LTRScoringQuery(ltrScoringModel));
     hits = rescorer.rescore(searcher, hits, 2);
 
     // rerank using the field final-score
@@ -229,7 +229,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
     final LTRScoringModel ltrScoringModel = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures, null);
 
-    final LTRRescorer rescorer = new LTRRescorer(new ModelQuery(ltrScoringModel));
+    final LTRRescorer rescorer = new LTRRescorer(new LTRScoringQuery(ltrScoringModel));
 
     // rerank @ 0 should not change the order
     hits = rescorer.rescore(searcher, hits, 0);
@@ -244,8 +244,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
     for (int topN = 1; topN <= 5; topN++) {
       log.info("rerank {} documents ", topN);
       hits = searcher.search(bqBuilder.build(), 10);
-      // ltrScoringModel = new MockModel();
-      // rescorer = new LTRRescorer(new ModelQuery(ltrScoringModel));
+
       final ScoreDoc[] slice = new ScoreDoc[topN];
       System.arraycopy(hits.scoreDocs, 0, slice, 0, topN);
       hits = new TopDocs(hits.totalHits, slice, hits.getMaxScore());
@@ -279,7 +278,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
         "final-score");
     MockModel ltrScoringModel = new MockModel("test",
         features, norms, "test", allFeatures, null);
-    ModelQuery query = new ModelQuery(ltrScoringModel);
+    LTRScoringQuery query = new LTRScoringQuery(ltrScoringModel);
     ModelWeight wgt = query.createWeight(null, true, 1f);
     ModelScorer modelScr = wgt.scorer(null);
     modelScr.getDocInfo().setOriginalDocScore(new Float(1f));
@@ -295,7 +294,7 @@ public class TestReRankingPipeline extends LuceneTestCase {
         9}, "final-score");
     ltrScoringModel = new MockModel("test", features, norms,
         "test", allFeatures, null);
-    query = new ModelQuery(ltrScoringModel);
+    query = new LTRScoringQuery(ltrScoringModel);
     wgt = query.createWeight(null, true, 1f);
     modelScr = wgt.scorer(null);
     modelScr.getDocInfo().setOriginalDocScore(new Float(1f));

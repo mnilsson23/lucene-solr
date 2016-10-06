@@ -29,22 +29,22 @@ import org.apache.lucene.search.Rescorer;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.Weight;
-import org.apache.solr.ltr.ModelQuery.ModelWeight;
-import org.apache.solr.ltr.ModelQuery.ModelWeight.ModelScorer;
+import org.apache.solr.ltr.LTRScoringQuery.ModelWeight;
+import org.apache.solr.ltr.LTRScoringQuery.ModelWeight.ModelScorer;
 import org.apache.solr.search.SolrIndexSearcher;
 
 
 /**
  * Implements the rescoring logic. The top documents returned by solr with their
- * original scores, will be processed by a {@link ModelQuery} that will assign a
+ * original scores, will be processed by a {@link LTRScoringQuery} that will assign a
  * new score to each document. The top documents will be resorted based on the
  * new score.
  * */
 public class LTRRescorer extends Rescorer {
 
-  ModelQuery reRankModel;
-  public LTRRescorer(ModelQuery reRankModel) {
-    this.reRankModel = reRankModel;
+  LTRScoringQuery scoringQuery;
+  public LTRRescorer(LTRScoringQuery scoringQuery) {
+    this.scoringQuery = scoringQuery;
   }
 
   private void heapAdjust(ScoreDoc[] hits, int size, int root) {
@@ -116,7 +116,7 @@ public class LTRRescorer extends Rescorer {
     final ScoreDoc[] reranked = new ScoreDoc[topN];
     final List<LeafReaderContext> leaves = searcher.getIndexReader().leaves();
     final ModelWeight modelWeight = (ModelWeight) searcher
-        .createNormalizedWeight(reRankModel, true);
+        .createNormalizedWeight(scoringQuery, true);
 
     // FIXME: I dislike that we have no guarantee this is actually a
     // SolrIndexReader.
@@ -153,7 +153,7 @@ public class LTRRescorer extends Rescorer {
 
     ModelScorer scorer = null;
     int hitUpto = 0;
-    final FeatureLogger<?> featureLogger = reRankModel.getFeatureLogger();
+    final FeatureLogger<?> featureLogger = scoringQuery.getFeatureLogger();
 
     // FIXME
     // All of this heap code is only for logging. Wrap all this code in
@@ -201,7 +201,7 @@ public class LTRRescorer extends Rescorer {
         // if the heap is not full, maybe I want to log the features for this
         // document
         if (featureLogger != null) {
-          featureLogger.log(hit.doc, reRankModel, solrIndexSearch,
+          featureLogger.log(hit.doc, scoringQuery, solrIndexSearch,
               modelWeight.getFeaturesInfo());
         }
       } else if (hitUpto == topN) {
@@ -218,7 +218,7 @@ public class LTRRescorer extends Rescorer {
           reranked[0] = hit;
           heapAdjust(reranked, topN, 0);
           if (featureLogger != null) {
-            featureLogger.log(hit.doc, reRankModel, solrIndexSearch,
+            featureLogger.log(hit.doc, scoringQuery, solrIndexSearch,
                 modelWeight.getFeaturesInfo());
           }
         }
@@ -236,12 +236,12 @@ public class LTRRescorer extends Rescorer {
     final int n = ReaderUtil.subIndex(docID, leafContexts);
     final LeafReaderContext context = leafContexts.get(n);
     final int deBasedDoc = docID - context.docBase;
-    final Weight modelWeight = searcher.createNormalizedWeight(reRankModel,
+    final Weight modelWeight = searcher.createNormalizedWeight(scoringQuery,
         true);
     return modelWeight.explain(context, deBasedDoc);
   }
 
-  public static ModelQuery.FeatureInfo[] extractFeaturesInfo(ModelWeight modelWeight,
+  public static LTRScoringQuery.FeatureInfo[] extractFeaturesInfo(ModelWeight modelWeight,
       int docid,
       Float originalDocScore,
       List<LeafReaderContext> leafContexts)
@@ -251,7 +251,7 @@ public class LTRRescorer extends Rescorer {
     final int deBasedDoc = docid - atomicContext.docBase;
     final ModelScorer r = modelWeight.scorer(atomicContext);
     if ( (r == null) || (r.iterator().advance(deBasedDoc) != docid) ) {
-      return new ModelQuery.FeatureInfo[0];
+      return new LTRScoringQuery.FeatureInfo[0];
     } else {
       if (originalDocScore != null) {
         // If results have not been reranked, the score passed in is the original query's

@@ -379,8 +379,8 @@ An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/co
 read from the request the model, an instance of [LTRScoringModel](solr/contrib/ltr/src/java/org/apache/solr/ltr/model/LTRScoringModel.java),
 plus other parameters. The plugin will generate an [LTRQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQuery.java), a particular org.apache.solr.search. RankQuery.
 It wraps the original solr query for the first pass ranking, and uses the provided model in a
-[ModelQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/ModelQuery.java) to
-rescore and rerank the top documents.  The ModelQuery will take care of computing the values of all the
+[LTRScoringQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRScoringQuery.java) to
+rescore and rerank the top documents.  The LTRScoringQuery will take care of computing the values of all the
 [features](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/Feature.java) and then will delegate the final score
 generation to the LTRScoringModel.
 
