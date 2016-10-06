@@ -26,7 +26,7 @@ public class SolrQueryRequestContextUtils {
   /** key of the feature logger in the request context **/
   private static final String FEATURE_LOGGER = LTR_PREFIX + "feature_logger";
 
-  /** key of the model query in the request context **/
+  /** key of the scoring query in the request context **/
   private static final String SCORING_QUERY = LTR_PREFIX + "scoring_query";
 
   /** key of the isExtractingFeatures flag in the request context **/
@@ -48,7 +48,7 @@ public class SolrQueryRequestContextUtils {
     return (FeatureLogger<?>) req.getContext().get(FEATURE_LOGGER);
   }
 
-  /** model query accessors **/
+  /** scoring query accessors **/
 
   public static void setScoringQuery(SolrQueryRequest req, LTRScoringQuery scoringQuery) {
     req.getContext().put(SCORING_QUERY, scoringQuery);
