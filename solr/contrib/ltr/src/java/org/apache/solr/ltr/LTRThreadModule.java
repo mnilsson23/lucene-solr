@@ -19,14 +19,12 @@ package org.apache.solr.ltr;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.solr.common.util.ExecutorUtil;
 import org.apache.solr.common.util.NamedList;
-import org.apache.solr.ltr.feature.Feature.FeatureWeight;
 import org.apache.solr.util.DefaultSolrThreadFactory;
 import org.apache.solr.util.SolrPluginUtils;
 import org.apache.solr.util.plugin.NamedListInitializedPlugin;
@@ -74,8 +72,8 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   // settings
-  private int maxThreads = 1;
-  private int maxQueryThreads = 1;
+  private int totalThreads = 1;
+  private int numThreads = 1;
   private int maxPoolSize = Integer.MAX_VALUE;
   private long keepAliveTimeSeconds = 10;
   private String threadNamePrefix = "ltrExecutor";
@@ -88,9 +86,9 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   // For test use only.
-  LTRThreadModule(int maxThreads, int maxQueryThreads) {
-    this.maxThreads = maxThreads;
-    this.maxQueryThreads = maxQueryThreads;
+  LTRThreadModule(int totalThreads, int numThreads) {
+    this.totalThreads = totalThreads;
+    this.numThreads = numThreads;
     init(null);
   }
 
@@ -100,8 +98,8 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
       SolrPluginUtils.invokeSetters(this, args);
     }
     validate();
-    if  (this.maxThreads > 1 ){
-      ltrSemaphore = new Semaphore(maxThreads);
+    if  (this.totalThreads > 1 ){
+      ltrSemaphore = new Semaphore(totalThreads);
     } else {
       ltrSemaphore = null;
     }
@@ -115,23 +113,23 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   public void validate() {
-    if (maxThreads <= 0){
-      throw new IllegalArgumentException("maxThreads cannot be less than 1");
+    if (totalThreads <= 0){
+      throw new IllegalArgumentException("totalThreads cannot be less than 1");
     }
-    if (maxQueryThreads <= 0){
-      throw new IllegalArgumentException("maxQueryThreads cannot be less than 1");
+    if (numThreads <= 0){
+      throw new IllegalArgumentException("numThreads cannot be less than 1");
     }
-    if (maxThreads < maxQueryThreads){
-      throw new IllegalArgumentException("maxQueryThreads cannot be greater than maxThreads");
+    if (totalThreads < numThreads){
+      throw new IllegalArgumentException("numThreads cannot be greater than totalThreads");
     }
   }
 
-  public void setMaxThreads(int maxThreads) {
-    this.maxThreads = maxThreads;
+  public void setTotalThreads(int totalThreads) {
+    this.totalThreads = totalThreads;
   }
 
-  public void setMaxQueryThreads(int maxQueryThreads) {
-    this.maxQueryThreads = maxQueryThreads;
+  public void setNumThreads(int numThreads) {
+    this.numThreads = numThreads;
   }
 
   public void setMaxPoolSize(int maxPoolSize) {
@@ -143,7 +141,7 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   public Semaphore createQuerySemaphore() {
-    return (maxQueryThreads > 1 ? new Semaphore(maxQueryThreads) : null);
+    return (numThreads > 1 ? new Semaphore(numThreads) : null);
   }
 
   public void acquireLTRSemaphore() throws InterruptedException {

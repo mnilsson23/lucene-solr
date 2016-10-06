@@ -43,7 +43,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.core.SolrResourceLoader;
-import org.apache.solr.ltr.LTRScoringQuery;
 import org.apache.solr.ltr.LTRScoringQuery.FeatureInfo;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.feature.ValueFeature;
@@ -151,8 +150,8 @@ public class TestLTRScoringQuery extends LuceneTestCase {
     final HashMap<String,String[]> externalFeatureInfo2 = new HashMap<>();
     externalFeatureInfo2.put("user_query", new String[] {"abc"});
     externalFeatureInfo2.put("queryIntent", new String[] {"company"});
-    int maxThreads = 10, maxQueryThreads = 10;
-    LTRThreadModule threadManager = new LTRThreadModule(maxThreads, maxQueryThreads);
+    int totalThreads = 10, numThreads = 10;
+    LTRThreadModule threadManager = new LTRThreadModule(totalThreads, numThreads);
     final LTRScoringQuery m2 = new LTRScoringQuery(algorithm1, externalFeatureInfo2, false, threadManager);
 
 
