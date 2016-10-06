@@ -32,6 +32,7 @@ import org.apache.solr.ltr.FeatureLogger;
 import org.apache.solr.ltr.LTRRescorer;
 import org.apache.solr.ltr.LTRScoringQuery;
 import org.apache.solr.ltr.LTRScoringQuery.ModelWeight;
+import org.apache.solr.ltr.LTRThreadModule;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.SolrQueryRequestContextUtils;
 import org.apache.solr.ltr.model.LTRScoringModel;
@@ -67,6 +68,8 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
 
   private String loggingModelName = DEFAULT_LOGGING_MODEL_NAME;
 
+  private LTRThreadModule threadManager = null;
+
   public void setLoggingModelName(String loggingModelName) {
     this.loggingModelName = loggingModelName;
   }
@@ -74,6 +77,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
   @Override
   public void init(@SuppressWarnings("rawtypes") NamedList args) {
     super.init(args);
+    threadManager = LTRThreadModule.getInstance(args);
     SolrPluginUtils.invokeSetters(this, args);
   }
 
@@ -162,7 +166,8 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
           
           scoringQuery = new LTRScoringQuery(lm, 
               LTRQParserPlugin.extractEFIParams(params), 
-              true, SolrQueryRequestContextUtils.getThreadManager(req)); // request feature weights to be created for all features
+              true,
+              threadManager); // request feature weights to be created for all features
 
           // Local transformer efi if provided
           scoringQuery.setOriginalQuery(context.getQuery());
