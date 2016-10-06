@@ -18,11 +18,13 @@ package org.apache.solr.ltr.norm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.solr.core.SolrResourceLoader;
+import org.apache.solr.ltr.model.ModelException;
 import org.junit.Test;
 
 public class TestStandardNormalizer {
@@ -53,18 +55,34 @@ public class TestStandardNormalizer {
   public void testInvalidSTD() {
     final Map<String,Object> params = new HashMap<String,Object>();
     params.put("std", "0f");
-    implTestStandard(params,
-        0.0f,
-        0.0f);
+    final NormalizerException expectedException = 
+        new NormalizerException("Standard Normalizer standard deviation must be positive "
+            + "| avg = 0.0,std = 0.0");
+    try {
+        implTestStandard(params,
+              0.0f,
+              0.0f);
+        fail("testInvalidSTD failed to throw exception: "+expectedException);
+    } catch(NormalizerException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
   @Test
   public void testInvalidSTD2() {
     final Map<String,Object> params = new HashMap<String,Object>();
     params.put("std", "-1f");
-    implTestStandard(params,
-        0.0f,
-        -1f);
+    final NormalizerException expectedException = 
+        new NormalizerException("Standard Normalizer standard deviation must be positive "
+            + "| avg = 0.0,std = -1.0");
+    try {
+        implTestStandard(params,
+              0.0f,
+              -1f);
+        fail("testInvalidSTD2 failed to throw exception: "+expectedException);
+    } catch(NormalizerException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
   @Test
@@ -72,9 +90,17 @@ public class TestStandardNormalizer {
     final Map<String,Object> params = new HashMap<String,Object>();
     params.put("avg", "1f");
     params.put("std", "0f");
-    implTestStandard(params,
-        1f,
-        0f);
+    final NormalizerException expectedException = 
+        new NormalizerException("Standard Normalizer standard deviation must be positive "
+            + "| avg = 1.0,std = 0.0");
+    try {
+        implTestStandard(params,
+              1f,
+              0f);
+        fail("testInvalidSTD3 failed to throw exception: "+expectedException);
+    } catch(NormalizerException actualException) {
+      assertEquals(expectedException.toString(), actualException.toString());
+    }
   }
 
   @Test

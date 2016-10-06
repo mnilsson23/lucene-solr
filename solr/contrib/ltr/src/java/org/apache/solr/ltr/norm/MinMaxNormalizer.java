@@ -17,6 +17,7 @@
 package org.apache.solr.ltr.norm;
 
 import java.util.LinkedHashMap;
+import org.apache.solr.ltr.model.ModelException;
 
 /**
  * A Normalizer to scale a feature value using a (min,max) range.
@@ -71,6 +72,15 @@ public class MinMaxNormalizer extends Normalizer {
   public void setMax(String max) {
     this.max = Float.parseFloat(max);
     updateDelta();
+  }
+  
+  @Override
+  protected void validate() throws NormalizerException {
+    super.validate();
+    if (delta == 0f)
+      throw 
+      new NormalizerException("MinMax Normalizer delta must not be zero " +
+      "| min = " + min + ",max = " + max + ",delta = " + delta);
   }
 
   @Override
