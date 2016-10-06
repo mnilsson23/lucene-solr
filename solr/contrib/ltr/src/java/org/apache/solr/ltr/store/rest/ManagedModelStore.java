@@ -73,17 +73,17 @@ public class ManagedModelStore extends ManagedResource implements
   private static final String MODELS_JSON_FIELD = "models";
 
   /** name of the attribute containing a class **/
-  private static final String CLASS_KEY = "class";
+  static final String CLASS_KEY = "class";
   /** name of the attribute containing the features **/
-  private static final String FEATURES_KEY = "features";
+  static final String FEATURES_KEY = "features";
   /** name of the attribute containing a name **/
-  private static final String NAME_KEY = "name";
+  static final String NAME_KEY = "name";
   /** name of the attribute containing a normalizer **/
-  private static final String NORM_KEY = "norm";
+  static final String NORM_KEY = "norm";
   /** name of the attribute containing parameters **/
-  private static final String PARAMS_KEY = "params";
+  static final String PARAMS_KEY = "params";
   /** name of the attribute containing a store **/
-  private static final String STORE_KEY = "store";
+  static final String STORE_KEY = "store";
 
   private final ModelStore store;
   private ManagedFeatureStore managedFeatureStore;

@@ -61,13 +61,13 @@ public class ManagedFeatureStore extends ManagedResource implements
   public static final String REST_END_POINT = "/schema/feature-store";
 
   /** name of the attribute containing the feature class **/
-  private static final String CLASS_KEY = "class";
+  static final String CLASS_KEY = "class";
   /** name of the attribute containing the feature name **/
-  private static final String NAME_KEY = "name";
+  static final String NAME_KEY = "name";
   /** name of the attribute containing the feature params **/
-  private static final String PARAMS_KEY = "params";
+  static final String PARAMS_KEY = "params";
   /** name of the attribute containing the feature store used **/
-  private static final String FEATURE_STORE_NAME_KEY = "store";
+  static final String FEATURE_STORE_NAME_KEY = "store";
 
   private final Map<String,FeatureStore> stores = new HashMap<>();
 

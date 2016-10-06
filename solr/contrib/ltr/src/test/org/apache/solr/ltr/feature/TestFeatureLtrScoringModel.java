@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.solr.ltr.TestRerankBase;
 import org.apache.solr.ltr.store.rest.ManagedFeatureStore;
+import org.apache.solr.ltr.store.rest.TestManagedFeatureStore;
 import org.apache.solr.ltr.feature.FeatureException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -44,11 +45,9 @@ public class TestFeatureLtrScoringModel extends TestRerankBase {
   @Test
   public void getInstanceTest() throws FeatureException
   {
-
-    final Map<String,Object> map = new HashMap<String,Object>();
-    map.put("name", "test");
-    map.put("class", OriginalScoreFeature.class.getCanonicalName());
-    store.addFeature(map, "testFstore");
+    store.addFeature(TestManagedFeatureStore.createMap("test",
+        OriginalScoreFeature.class.getCanonicalName(), null),
+        "testFstore");
     final Feature feature = store.getFeatureStore("testFstore").get("test");
     assertNotNull(feature);
     assertEquals("test", feature.getName());
@@ -63,10 +62,9 @@ public class TestFeatureLtrScoringModel extends TestRerankBase {
     final ClassNotFoundException expectedException = 
         new ClassNotFoundException(nonExistingClassName);
     try {
-      final Map<String,Object> map = new HashMap<String,Object>();
-      map.put("name", "test");
-      map.put("class", nonExistingClassName);
-      store.addFeature(map, "testFstore2");
+      store.addFeature(TestManagedFeatureStore.createMap("test",
+          nonExistingClassName, null),
+          "testFstore2");
       fail("getInvalidInstanceTest failed to throw exception: "+expectedException);
     } catch (Exception actualException) {
       Throwable rootError = getRootCause(actualException);

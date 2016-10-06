@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.solr.ltr.TestRerankBase;
 import org.apache.solr.ltr.store.FeatureStore;
 import org.apache.solr.ltr.store.rest.ManagedFeatureStore;
+import org.apache.solr.ltr.store.rest.TestManagedFeatureStore;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -50,11 +51,10 @@ public class TestFeatureStore extends TestRerankBase {
     final FeatureStore fs = fstore.getFeatureStore("fstore-testFeature");
     for (int i = 0; i < 5; i++) {
       final String name = "c" + i;
-      final Map<String,Object> map = new HashMap<String,Object>();
-      map.put("name", name);
-      map.put("class", OriginalScoreFeature.class.getCanonicalName());
 
-      fstore.addFeature(map, "fstore-testFeature");
+      fstore.addFeature(TestManagedFeatureStore.createMap(name,
+          OriginalScoreFeature.class.getCanonicalName(), null),
+          "fstore-testFeature");
 
       final Feature f = fs.get(name);
       assertNotNull(f);
@@ -72,12 +72,10 @@ public class TestFeatureStore extends TestRerankBase {
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("value", i);
       final String name = "c" + i;
-      final Map<String,Object> map = new HashMap<String,Object>();
-      map.put("name", name);
-      map.put("class", ValueFeature.class.getCanonicalName());
-      map.put("params", params);
 
-      fstore.addFeature(map, "fstore-testFeature2");
+      fstore.addFeature(TestManagedFeatureStore.createMap(name,
+          ValueFeature.class.getCanonicalName(), params),
+          "fstore-testFeature2");
 
     }
 
@@ -97,11 +95,9 @@ public class TestFeatureStore extends TestRerankBase {
       Map<String,Object> params = new HashMap<String,Object>();
       params.put("value", i);
       final String name = "testc" + (float) i;
-      final Map<String,Object> map = new HashMap<String,Object>();
-      map.put("name", name);
-      map.put("class", ValueFeature.class.getCanonicalName());
-      map.put("params", params);
-      fstore.addFeature(map, "fstore-testFeature3");
+      fstore.addFeature(TestManagedFeatureStore.createMap(name,
+          ValueFeature.class.getCanonicalName(), params),
+          "fstore-testFeature3");
 
     }
     assertNull(fs.get("missing_feature_name"));
