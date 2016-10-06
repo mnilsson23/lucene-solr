@@ -150,8 +150,8 @@ public class TestLTRScoringQuery extends LuceneTestCase {
     final HashMap<String,String[]> externalFeatureInfo2 = new HashMap<>();
     externalFeatureInfo2.put("user_query", new String[] {"abc"});
     externalFeatureInfo2.put("queryIntent", new String[] {"company"});
-    int totalThreads = 10, numThreads = 10;
-    LTRThreadModule threadManager = new LTRThreadModule(totalThreads, numThreads);
+    int totalPoolThreads = 10, numThreadsPerRequest = 10;
+    LTRThreadModule threadManager = new LTRThreadModule(totalPoolThreads, numThreadsPerRequest);
     final LTRScoringQuery m2 = new LTRScoringQuery(algorithm1, externalFeatureInfo2, false, threadManager);
 
 

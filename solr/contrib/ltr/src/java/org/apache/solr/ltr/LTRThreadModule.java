@@ -72,8 +72,8 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   // settings
-  private int totalThreads = 1;
-  private int numThreads = 1;
+  private int totalPoolThreads = 1;
+  private int numThreadsPerRequest = 1;
   private int maxPoolSize = Integer.MAX_VALUE;
   private long keepAliveTimeSeconds = 10;
   private String threadNamePrefix = "ltrExecutor";
@@ -86,9 +86,9 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   // For test use only.
-  LTRThreadModule(int totalThreads, int numThreads) {
-    this.totalThreads = totalThreads;
-    this.numThreads = numThreads;
+  LTRThreadModule(int totalPoolThreads, int numThreadsPerRequest) {
+    this.totalPoolThreads = totalPoolThreads;
+    this.numThreadsPerRequest = numThreadsPerRequest;
     init(null);
   }
 
@@ -98,8 +98,8 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
       SolrPluginUtils.invokeSetters(this, args);
     }
     validate();
-    if  (this.totalThreads > 1 ){
-      ltrSemaphore = new Semaphore(totalThreads);
+    if  (this.totalPoolThreads > 1 ){
+      ltrSemaphore = new Semaphore(totalPoolThreads);
     } else {
       ltrSemaphore = null;
     }
@@ -113,23 +113,23 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   public void validate() {
-    if (totalThreads <= 0){
-      throw new IllegalArgumentException("totalThreads cannot be less than 1");
+    if (totalPoolThreads <= 0){
+      throw new IllegalArgumentException("totalPoolThreads cannot be less than 1");
     }
-    if (numThreads <= 0){
-      throw new IllegalArgumentException("numThreads cannot be less than 1");
+    if (numThreadsPerRequest <= 0){
+      throw new IllegalArgumentException("numThreadsPerRequest cannot be less than 1");
     }
-    if (totalThreads < numThreads){
-      throw new IllegalArgumentException("numThreads cannot be greater than totalThreads");
+    if (totalPoolThreads < numThreadsPerRequest){
+      throw new IllegalArgumentException("numThreadsPerRequest cannot be greater than totalPoolThreads");
     }
   }
 
-  public void setTotalThreads(int totalThreads) {
-    this.totalThreads = totalThreads;
+  public void setTotalPoolThreads(int totalPoolThreads) {
+    this.totalPoolThreads = totalPoolThreads;
   }
 
-  public void setNumThreads(int numThreads) {
-    this.numThreads = numThreads;
+  public void setNumThreadsPerRequest(int numThreadsPerRequest) {
+    this.numThreadsPerRequest = numThreadsPerRequest;
   }
 
   public void setMaxPoolSize(int maxPoolSize) {
@@ -141,7 +141,7 @@ final public class LTRThreadModule implements NamedListInitializedPlugin {
   }
 
   public Semaphore createQuerySemaphore() {
-    return (numThreads > 1 ? new Semaphore(numThreads) : null);
+    return (numThreadsPerRequest > 1 ? new Semaphore(numThreadsPerRequest) : null);
   }
 
   public void acquireLTRSemaphore() throws InterruptedException {
