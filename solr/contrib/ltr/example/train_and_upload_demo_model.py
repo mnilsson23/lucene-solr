@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-import time
 import json
 import httplib
 import urllib
-import libSvmFormatter
+import libsvm_formatter
 
 from optparse import OptionParser
 
@@ -45,8 +44,6 @@ def generateTrainingData(solrQueries, config):
 
     try:
         for queryUrl,query,docId,score,source in solrQueries:
-            qStartTime = time.time()
-
             conn.request("GET", queryUrl, headers=headers)
             r = conn.getresponse()
             msg = r.read()
@@ -60,7 +57,6 @@ def generateTrainingData(solrQueries, config):
                     print "ERROR NULL FV FOR: " + docId;
                     print msg
                     continue;
-
             else:
                 print "ERROR FOR: " + docId;
                 print msg
@@ -130,40 +126,38 @@ def main(argv=None):
     with open(options.configFile) as configFile:
         config = json.load(configFile)
 
-        print "Deploying feature space to Solr"
+        print "Uploading feature space to Solr"
         setupSolr(config)
 
         print "Generating feature extraction Solr queries"
         reRankQueries = generateQueries(config)
 
         print "Extracting features"
-        output = open(config["trainingFile"],"w")
         fvGenerator = generateTrainingData(reRankQueries, config);
-        formatter = libSvmFormatter.LibSvmFormatter();
+        formatter = libsvm_formatter.LibSvmFormatter();
         formatter.processQueryDocFeatureVector(fvGenerator,config["trainingFile"]);
 
         print "Training ranksvm model"
-        libSvmFormatter.trainLibSvm(config["trainingLibraryLocation"],config["trainingFile"])
+        libsvm_formatter.trainLibSvm(config["trainingLibraryLocation"],config["trainingFile"])
 
         print "Converting ranksvm model to solr model"
         formatter.convertLibSvmModelToLtrModel(config["trainingFile"] + ".model", config["solrModelFile"], config["solrModelName"])
 
-        print "Deploying model to solr"
-        pushModel(config)
+        print "Uploading model to solr"
+        uploadModel(config["collection"], config["host"], config["port"], config["solrModelFile"])
 
-def pushModel(config):
-    baseUrl = "/solr/" + config["collection"]
-    modelUrl = baseUrl + "/schema/model-store"
+def uploadModel(collection, host, port, modelFile):    
+    modelUrl = "/solr/" + collection + "/schema/model-store"
     headers = {'Content-type': 'application/json'}
-    modelBody = open(config["solrModelFile"])
-    conn = httplib.HTTPConnection(config["host"], config["port"])
-    conn.request("POST", modelUrl, modelBody, headers)
-    r = conn.getresponse()
-    msg = r.read()
-    if (r.status != httplib.OK and
-        r.status != httplib.CREATED and
-        r.status != httplib.ACCEPTED):
-            raise Exception("Status: {0} {1}\nResponse: {2}".format(r.status, r.reason, msg))
+    with open(modelFile) as modelBody:
+        conn = httplib.HTTPConnection(host, port)
+        conn.request("POST", modelUrl, modelBody, headers)
+        r = conn.getresponse()
+        msg = r.read()
+        if (r.status != httplib.OK and
+            r.status != httplib.CREATED and
+            r.status != httplib.ACCEPTED):
+                raise Exception("Status: {0} {1}\nResponse: {2}".format(r.status, r.reason, msg))
 
 if __name__ == '__main__':
     sys.exit(main())

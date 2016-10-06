@@ -6,33 +6,34 @@ FEATURE_DIFF_THRESHOLD = 1.e-6
 
 class LibSvmFormatter:
     def processQueryDocFeatureVector(self,docClickInfo,trainingFile):
-        '''Expects as input a list or generator that provides the context for each query
-         in a tuple composed of: query , docId , relevance , source , fv .
-        Successive lines with the same query and source are assumed to be part of the same list'''
+        '''Expects as input a sorted by queries list or generator that provides the context 
+        for each query in a tuple composed of: (query , docId , relevance , source , featureVector).
+        The list of documents that are part of the same query will generate comparisons
+        against each other for training. '''
         curQueryAndSource = "";
         with open(trainingFile,"w") as output:
             self.featureNameToId  = {}
             self.featureIdToName = {}
             self.curFeatIndex = 1;
             curListOfFv = []
-            for query,docId,relevance,source,fv in docClickInfo:
+            for query,docId,relevance,source,featureVector in docClickInfo:
                 if curQueryAndSource != query + source:
                     #Time to flush out all the pairs
                     _writeRankSVMPairs(curListOfFv,output);
                     curListOfFv = []
                     curQueryAndSource = query + source
-                curListOfFv.append((relevance,self._makeFvMap(fv)))
+                curListOfFv.append((relevance,self._makeFeaturesMap(featureVector)))
             _writeRankSVMPairs(curListOfFv,output); #This catches the last list of comparisons
 
-    def _makeFvMap(self,fvListForm):
+    def _makeFeaturesMap(self,featureVector):
         '''expects a list of strings with "feature name":"feature value" pairs. Outputs a map of map[key] = value.
-        Where key is now an integer.libSVM requires the key to be an integer but not all libraries have
+        Where key is now an integer. libSVM requires the key to be an integer but not all libraries have
         this requirement.'''
-        fv = {}
-        for keyValuePairStr in fvListForm:
+        features = {}
+        for keyValuePairStr in featureVector:
             featName,featValue = keyValuePairStr.split(":");
-            fv[self._getFeatureId(featName)] = float(featValue);
-        return fv
+            features[self._getFeatureId(featName)] = float(featValue);
+        return features
 
     def _getFeatureId(self,key):
         if key not in self.featureNameToId:
@@ -70,23 +71,30 @@ class LibSvmFormatter:
                         startReading = True
                 convertedOutFile.write('\n\t\t}\n\t}\n}')
 
-def _writeRankSVMPairs(listOfFv,output):
-    '''Given a list of relevance, {FV Map} where the list represents
+def _writeRankSVMPairs(listOfFeatures,output):
+    '''Given a list of (relevance, {Features Map}) where the list represents
     a set of documents to be compared, this calculates all pairs and
-    writes the Feature Vectors in a format compatible with libSVM'''
-
-    for d1 in range(0,len(listOfFv)):
-                for d2 in range(d1+1,len(listOfFv)):
-                    fv1,fv2 = listOfFv[d1][1],listOfFv[d2][1]
-                    d1Relevance, d2Relevance = float(listOfFv[d1][0]),float(listOfFv[d2][0])
-                    if  d1Relevance - d2Relevance > PAIRWISE_THRESHOLD:#d1Relevance > d2Relevance
-                        outputLibSvmLine("+1",subtractFvMap(fv1,fv2),output);
-                        outputLibSvmLine("-1",subtractFvMap(fv2,fv1),output);
-                    elif d1Relevance - d2Relevance < -PAIRWISE_THRESHOLD: #d1Relevance < d2Relevance:
-                        outputLibSvmLine("+1",subtractFvMap(fv2,fv1),output);
-                        outputLibSvmLine("-1",subtractFvMap(fv1,fv2),output);
-                    else: #Must be approximately equal relevance, in which case this is a useless signal and we should skip
-                        continue;
+    writes the Feature Vectors in a format compatible with libSVM.
+    Ex: listOfFeatures = [
+      #(relevance, {feature1:value, featureN:value})
+      (4, {1:0.9, 2:0.9, 3:0.1})
+      (3, {1:0.7, 2:0.9, 3:0.2})
+      (1, {1:0.1, 2:0.9, 6:0.1})
+    ]    
+    '''
+    for d1 in range(0,len(listOfFeatures)):
+        for d2 in range(d1+1,len(listOfFeatures)):
+            doc1,doc2 = listOfFeatures[d1], listOfFeatures[d2]
+            fv1,fv2 = doc1[1],doc2[1]
+            d1Relevance, d2Relevance = float(doc1[0]),float(doc2[0])
+            if  d1Relevance - d2Relevance > PAIRWISE_THRESHOLD:#d1Relevance > d2Relevance
+                outputLibSvmLine("+1",subtractFvMap(fv1,fv2),output);
+                outputLibSvmLine("-1",subtractFvMap(fv2,fv1),output);
+            elif d1Relevance - d2Relevance < -PAIRWISE_THRESHOLD: #d1Relevance < d2Relevance:
+                outputLibSvmLine("+1",subtractFvMap(fv2,fv1),output);
+                outputLibSvmLine("-1",subtractFvMap(fv1,fv2),output);
+            else: #Must be approximately equal relevance, in which case this is a useless signal and we should skip
+                continue;
 
 def subtractFvMap(fv1,fv2):
     '''returns the fv from fv1 - fv2'''

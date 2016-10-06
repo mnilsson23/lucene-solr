@@ -74,7 +74,7 @@ BONUS: Train an actual machine learning model
 
   `cd  contrib/ltr/example`
 
-  `python ltr_generateModel.py -c config.json`
+  `python  train_and_upload_demo_model.py -c config.json`
 
    This script deploys your features from `config.json` "featuresFile" to Solr.  Then it takes the relevance judged query
    document pairs of "userQueriesFile" and merges it with the features extracted from Solr into a training
@@ -372,16 +372,16 @@ CrowdFlower. These platforms allow you to show human workers documents associate
 tell you what the correct ranking should be.
 
 At this point you'll need to collect feature vectors for each query document pair. You can use the information
-from the Extract features section above to do this. An example script has been included in example/ltr_generateModel.py.
+from the Extract features section above to do this. An example script has been included in example/train_and_upload_demo_model.py.
 
 # Explanation of the core reranking logic
-An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQParserPlugin.java). The plugin will
+An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/contrib/ltr/src/java/org/apache/solr/search/LTRQParserPlugin.java). The plugin will
 read from the request the model, an instance of [LTRScoringModel](solr/contrib/ltr/src/java/org/apache/solr/ltr/model/LTRScoringModel.java),
-plus other parameters. The plugin will generate an [LTRQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRQuery.java), a particular org.apache.solr.search. RankQuery.
-It wraps the original solr query for the first pass ranking, and uses the provided model in a
+plus other parameters. The plugin will generate an LTRQuery, a particular org.apache.solr.search.RankQuery.
+It wraps the original solr query for the first pass ranking, and uses the provided model in an
 [LTRScoringQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRScoringQuery.java) to
 rescore and rerank the top documents.  The LTRScoringQuery will take care of computing the values of all the
-[features](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/Feature.java) and then will delegate the final score
+[features](solr/contrib/ltr/src/java/org/apache/solr/ltr/feature/Feature.java) and then will delegate the final score
 generation to the LTRScoringModel.
 
 # Speeding up the weight creation with threads
