@@ -17,10 +17,42 @@
 package org.apache.solr.ltr.feature;
 
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.ltr.TestRerankBase;
 import org.apache.solr.ltr.model.RankSVMModel;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestUserTermScorereQDF extends TestQueryFeature {
+public class TestUserTermScorereQDF extends TestRerankBase {
+
+  @BeforeClass
+  public static void before() throws Exception {
+    setuptest("solrconfig-ltr.xml", "schema-ltr.xml");
+
+    assertU(adoc("id", "1", "title", "w1", "description", "w1", "popularity",
+        "1"));
+    assertU(adoc("id", "2", "title", "w2 2asd asdd didid", "description",
+        "w2 2asd asdd didid", "popularity", "2"));
+    assertU(adoc("id", "3", "title", "w3", "description", "w3", "popularity",
+        "3"));
+    assertU(adoc("id", "4", "title", "w4", "description", "w4", "popularity",
+        "4"));
+    assertU(adoc("id", "5", "title", "w5", "description", "w5", "popularity",
+        "5"));
+    assertU(adoc("id", "6", "title", "w1 w2", "description", "w1 w2",
+        "popularity", "6"));
+    assertU(adoc("id", "7", "title", "w1 w2 w3 w4 w5", "description",
+        "w1 w2 w3 w4 w5 w8", "popularity", "7"));
+    assertU(adoc("id", "8", "title", "w1 w1 w1 w2 w2 w8", "description",
+        "w1 w1 w1 w2 w2", "popularity", "8"));
+    assertU(commit());
+  }
+
+  @AfterClass
+  public static void after() throws Exception {
+    aftertest();
+  }  
+  
   @Test
   public void testUserTermScorerQWithDF() throws Exception {
     // before();
