@@ -32,6 +32,14 @@ import org.apache.solr.request.SolrQueryRequest;
 import com.google.common.collect.Sets;
 /**
  * This feature returns the value of a field in the current document
+ * Example configuration:
+ * <pre>{
+  "name":  "rawHits",
+  "class": "org.apache.solr.ltr.feature.FieldValueFeature",
+  "params": {
+      "field": "hits"
+  }
+}</pre>
  */
 public class FieldValueFeature extends Feature {
 

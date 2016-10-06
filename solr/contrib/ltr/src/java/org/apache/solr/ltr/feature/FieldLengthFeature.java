@@ -30,7 +30,14 @@ import org.apache.lucene.util.SmallFloat;
 import org.apache.solr.request.SolrQueryRequest;
 /**
  * This feature returns the length of a field (in terms) for the current document.
- *
+ * Example configuration:
+ * <pre>{
+  "name":  "titleLength",
+  "class": "org.apache.solr.ltr.feature.FieldLengthFeature",
+  "params": {
+      "field": "title"
+  }
+}</pre>
  * Note: since this feature relies on norms values that are stored in a single byte
  * the value of the feature could have a lightly different value.
  * (see also {@link org.apache.lucene.search.similarities.ClassicSimilarity})
