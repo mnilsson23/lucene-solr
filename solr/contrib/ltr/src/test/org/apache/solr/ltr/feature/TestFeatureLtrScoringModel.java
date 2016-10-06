@@ -46,8 +46,8 @@ public class TestFeatureLtrScoringModel extends TestRerankBase {
   {
 
     final Map<String,Object> map = new HashMap<String,Object>();
-    map.put(ManagedFeatureStore.NAME_KEY, "test");
-    map.put(ManagedFeatureStore.CLASS_KEY, OriginalScoreFeature.class.getCanonicalName());
+    map.put("name", "test");
+    map.put("class", OriginalScoreFeature.class.getCanonicalName());
     store.addFeature(map, "testFstore");
     final Feature feature = store.getFeatureStore("testFstore").get("test");
     assertNotNull(feature);
@@ -64,8 +64,8 @@ public class TestFeatureLtrScoringModel extends TestRerankBase {
         new ClassNotFoundException(nonExistingClassName);
     try {
       final Map<String,Object> map = new HashMap<String,Object>();
-      map.put(ManagedFeatureStore.NAME_KEY, "test");
-      map.put(ManagedFeatureStore.CLASS_KEY, nonExistingClassName);
+      map.put("name", "test");
+      map.put("class", nonExistingClassName);
       store.addFeature(map, "testFstore2");
       fail("getInvalidInstanceTest failed to throw exception: "+expectedException);
     } catch (Exception actualException) {

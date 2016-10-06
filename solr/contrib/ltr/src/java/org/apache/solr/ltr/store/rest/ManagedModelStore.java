@@ -85,7 +85,7 @@ public class ManagedModelStore extends ManagedResource implements
   /** name of the attribute containing a store **/
   private static final String STORE_KEY = "store";
 
-  private ModelStore store;
+  private final ModelStore store;
   private ManagedFeatureStore managedFeatureStore;
 
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -93,9 +93,7 @@ public class ManagedModelStore extends ManagedResource implements
   public ManagedModelStore(String resourceId, SolrResourceLoader loader,
       StorageIO storageIO) throws SolrException {
     super(resourceId, loader, storageIO);
-
     store = new ModelStore();
-
   }
 
   public void setManagedFeatureStore(ManagedFeatureStore managedFeatureStore) {
@@ -178,7 +176,6 @@ public class ManagedModelStore extends ManagedResource implements
 
   @Override
   public synchronized void doDeleteChild(BaseSolrResource endpoint, String childId) {
-    // FIXME: hack to delete all the stores
     if (childId.equals("*")) {
       store.clear();
     }

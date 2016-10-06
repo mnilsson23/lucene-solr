@@ -61,11 +61,11 @@ public class ManagedFeatureStore extends ManagedResource implements
   public static final String REST_END_POINT = "/schema/feature-store";
 
   /** name of the attribute containing the feature class **/
-  public static final String CLASS_KEY = "class";
+  private static final String CLASS_KEY = "class";
   /** name of the attribute containing the feature name **/
-  public static final String NAME_KEY = "name";
+  private static final String NAME_KEY = "name";
   /** name of the attribute containing the feature params **/
-  public static final String PARAMS_KEY = "params";
+  private static final String PARAMS_KEY = "params";
   /** name of the attribute containing the feature store used **/
   private static final String FEATURE_STORE_NAME_KEY = "store";
 
@@ -142,11 +142,6 @@ public class ManagedFeatureStore extends ManagedResource implements
       addFeature(updatesMap, featureStore);
     }
 
-    // logger.info("fstore updated, features: ");
-    // for (String s : store.getFeatureNames()) {
-    // logger.info("  - {}", s);
-    //
-    // }
     final List<Object> features = new ArrayList<>();
     for (final FeatureStore fs : stores.values()) {
       features.addAll(featuresAsManagedResources(fs));
