@@ -58,7 +58,7 @@ public abstract class FeatureLogger<FV_TYPE> {
    *         otherwise.
    */
 
-  public boolean log(int docid, LTRScoringQuery modelQuery,
+  public boolean log(int docid, LTRScoringQuery scoringQuery,
       SolrIndexSearcher searcher, FeatureInfo[] featuresInfo) {
     final FV_TYPE featureVector = makeFeatureVector(featuresInfo);
     if (featureVector == null) {
@@ -66,7 +66,7 @@ public abstract class FeatureLogger<FV_TYPE> {
     }
     // FIXME: Confirm this hashing works
     return searcher.cacheInsert(QUERY_FV_CACHE_NAME,
-        fvCacheKey(modelQuery, docid), featureVector) != null;
+        fvCacheKey(scoringQuery, docid), featureVector) != null;
   }
 
   /**
@@ -111,8 +111,8 @@ public abstract class FeatureLogger<FV_TYPE> {
 
   public abstract FV_TYPE makeFeatureVector(FeatureInfo[] featuresInfo);
 
-  private static int fvCacheKey(LTRScoringQuery modelQuery, int docid) {
-    return  modelQuery.hashCode() + (31 * docid);
+  private static int fvCacheKey(LTRScoringQuery scoringQuery, int docid) {
+    return  scoringQuery.hashCode() + (31 * docid);
   }
 
   /**
