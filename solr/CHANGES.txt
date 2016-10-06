@@ -152,6 +152,12 @@ Bug Fixes
 * SOLR-9556: OverseerAutoFailoverReplicaThread was not exiting on interrupt
   (Alan Woodward)
 
+* SOLR-9563: Collection creation could fail if an ADDREPLICA subrequest arrived
+  at a node before its local state had updated with the new collection data
+  (Alan Woodward)
+
+* SOLR-9278: Index replication interactions with IndexWriter can cause deadlock. (Xunlong via Mark Miller)
+
 Optimizations
 ----------------------
 
@@ -169,6 +175,11 @@ Optimizations
 
 * SOLR-9446: Leader failure after creating a freshly replicated index can send nodes into recovery even if
   index was not changed (Pushkar Raste, noble)
+
+* SOLR-9592: retrieving docValues as stored values was sped up by using the proper leaf
+  reader rather than ask for a global view.  In extreme cases, this leads to a 100x speedup.
+  (Takahiro Ishikawa, yonik)
+
 
 Other Changes
 ----------------------
@@ -238,6 +249,9 @@ Other Changes
 * SOLR-9588: Remove Guava dependency from SolrJ (Ishan Chattopadhyaya, noble)
 
 * SOLR-8140: Remove mentions of unimplemented admin-extra from the new Admin UI (Alexandre Rafalovitch)
+
+* SOLR-9589: Remove jackson dependency from SolrJ (Ishan Chattopadhyaya, noble)
+
 
 ==================  6.2.1 ==================
 
