@@ -381,7 +381,7 @@ plus other parameters. The plugin will generate an LTRQuery, a particular org.ap
 It wraps the original solr query for the first pass ranking, and uses the provided model in an
 [LTRScoringQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRScoringQuery.java) to
 rescore and rerank the top documents.  The LTRScoringQuery will take care of computing the values of all the
-[features](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/Feature.java) and then will delegate the final score
+[features](solr/contrib/ltr/src/java/org/apache/solr/ltr/feature/Feature.java) and then will delegate the final score
 generation to the LTRScoringModel.
 
 # Speeding up the weight creation with threads
