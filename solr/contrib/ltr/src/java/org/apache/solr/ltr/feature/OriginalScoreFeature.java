@@ -29,7 +29,14 @@ import org.apache.lucene.search.Weight;
 import org.apache.solr.ltr.DocInfo;
 import org.apache.solr.request.SolrQueryRequest;
 /**
- * This feature returns the original score that the document had before performing the reranking
+ * This feature returns the original score that the document had before performing 
+ * the reranking.
+ * Example configuration:
+ * <pre>{
+  "name":  "originalScore",
+  "class": "org.apache.solr.ltr.feature.OriginalScoreFeature",
+  "params": { }
+}</pre>
  **/
 public class OriginalScoreFeature extends Feature {
 

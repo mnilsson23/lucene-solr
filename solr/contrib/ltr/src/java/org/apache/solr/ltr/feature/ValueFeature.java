@@ -27,12 +27,24 @@ import org.apache.lucene.search.Query;
 import org.apache.solr.request.SolrQueryRequest;
 /**
  * This feature allows to return a constant given value for the current document.
+ * 
+ * Example configuration:
+ * <pre>{
+   "name" : "userFromMobile",
+   "class" : "org.apache.solr.ltr.feature.ValueFeature",
+   "params" : { "value" : "${userFromMobile}", "required":true }
+ }</pre>
+ *
+ *You can place a constant value like "1.3f" in the value params, but many times you
+ *would want to pass in external information to use per request. For instance, maybe
+ *you want to rank things differently if the search came from a mobile device, or maybe
+ *you want to use your external query intent system as a feature.
+ *In the rerank request you can pass in rq={... efi.userFromMobile=1}, and the above
+ *feature will return 1 for all the docs for that request.  If required is set to true,
+ *the request will return an error since you failed to pass in the efi, otherwise if will
+ *just skip the feature and use a default value of 0 instead. 
  **/
 public class ValueFeature extends Feature {
-  /** name of the attribute containing the value of this feature **/
-  private static final String VALUE_FIELD = "value";
-  private static final String REQUIRED_PARAM = "required";
-
   private float configValue = -1f;
   private String configValueStr = null;
 

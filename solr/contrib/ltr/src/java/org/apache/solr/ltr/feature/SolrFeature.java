@@ -40,7 +40,21 @@ import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.search.SolrIndexSearcher.ProcessedFilter;
 import org.apache.solr.search.SyntaxError;
 /**
- * This feature allows to reuse a Solr query as a feature, the value of the feature will be the score of the given query for the current document.
+ * This feature allows you to reuse any Solr query as a feature. The value
+ * of the feature will be the score of the given query for the current document.
+ * See <a href="https://cwiki.apache.org/confluence/display/solr/Other+Parsers">Solr documentation of other parsers</a> you can use as a feature.
+ * Example configurations:
+ * <pre>[{ "name": "isBook",
+  "class": "org.apache.solr.ltr.feature.SolrFeature",
+  "params":{ "fq": ["{!terms f=category}book"] }
+},
+{
+  "name":  "documentRecency",
+  "class": "org.apache.solr.ltr.feature.SolrFeature",
+  "params": {
+      "q": "{!func}recip( ms(NOW,publish_date), 3.16e-11, 1, 1)"
+  }
+}]</pre>
  **/
 public class SolrFeature extends Feature {
 

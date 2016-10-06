@@ -29,14 +29,33 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-import org.apache.solr.request.SolrQueryRequest;
-import org.apache.solr.request.macro.MacroExpander;
 import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.ltr.DocInfo;
+import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.request.macro.MacroExpander;
 import org.apache.solr.util.SolrPluginUtils;
 
 /**
- * A 'recipe' for computing a feature
+ * A recipe for computing a feature.  Subclass this for specialized feature calculations.
+ * <p>
+ * A feature consists of
+ * <ul>
+ * <li> a name as the identifier
+ * <li> parameters to represent the specific feature
+ * </ul>
+ * <p>
+ * Example configuration (snippet):
+ * <pre>{
+   "class" : "...",
+   "name" : "myFeature",
+   "params" : {
+       ...
+   }
+}</pre>
+ * <p>
+ * {@link Feature} is an abstract class and concrete classes should implement 
+ * the {@link #validate()} function, and must implement the {@link #paramsToMap()}
+ * and createWeight() methods.
  */
 public abstract class Feature extends Query {
 
