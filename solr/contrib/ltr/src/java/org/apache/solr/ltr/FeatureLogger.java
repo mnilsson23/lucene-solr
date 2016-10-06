@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.solr.ltr.ModelQuery.FeatureInfo;
+import org.apache.solr.ltr.LTRScoringQuery.FeatureInfo;
 import org.apache.solr.search.SolrCache;
 import org.apache.solr.search.SolrIndexSearcher;
 import org.slf4j.Logger;
@@ -58,7 +58,7 @@ public abstract class FeatureLogger<FV_TYPE> {
    *         otherwise.
    */
 
-  public boolean log(int docid, ModelQuery modelQuery,
+  public boolean log(int docid, LTRScoringQuery modelQuery,
       SolrIndexSearcher searcher, FeatureInfo[] featuresInfo) {
     final FV_TYPE featureVector = makeFeatureVector(featuresInfo);
     if (featureVector == null) {
@@ -111,7 +111,7 @@ public abstract class FeatureLogger<FV_TYPE> {
 
   public abstract FV_TYPE makeFeatureVector(FeatureInfo[] featuresInfo);
 
-  private static int fvCacheKey(ModelQuery modelQuery, int docid) {
+  private static int fvCacheKey(LTRScoringQuery modelQuery, int docid) {
     return  modelQuery.hashCode() + (31 * docid);
   }
 
@@ -123,9 +123,9 @@ public abstract class FeatureLogger<FV_TYPE> {
    * @return String representation of the list of features calculated for docid
    */
   
-  public FV_TYPE getFeatureVector(int docid, ModelQuery reRankModel,
+  public FV_TYPE getFeatureVector(int docid, LTRScoringQuery scoringQuery,
       SolrIndexSearcher searcher) {
-    return (FV_TYPE) searcher.cacheLookup(QUERY_FV_CACHE_NAME, fvCacheKey(reRankModel, docid));
+    return (FV_TYPE) searcher.cacheLookup(QUERY_FV_CACHE_NAME, fvCacheKey(scoringQuery, docid));
   }
 
 

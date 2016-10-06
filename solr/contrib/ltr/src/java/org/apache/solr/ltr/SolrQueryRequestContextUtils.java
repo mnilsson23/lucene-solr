@@ -27,13 +27,16 @@ public class SolrQueryRequestContextUtils {
   private static final String FEATURE_LOGGER = LTR_PREFIX + "feature_logger";
 
   /** key of the model query in the request context **/
-  private static final String MODEL_QUERY = LTR_PREFIX + "model_query";
+  private static final String SCORING_QUERY = LTR_PREFIX + "scoring_query";
 
   /** key of the isExtractingFeatures flag in the request context **/
   private static final String IS_EXTRACTING_FEATURES = LTR_PREFIX + "isExtractingFeatures";
 
   /** key of the feature vector store name in the request context **/
   private static final String STORE = LTR_PREFIX + "store";
+  
+  /** key for storing threadManager from LTRQParserPlugin in the request context **/
+  private static final String THREAD_MGR = LTR_PREFIX + "threadManager";
 
   /** feature logger accessors **/
 
@@ -47,12 +50,12 @@ public class SolrQueryRequestContextUtils {
 
   /** model query accessors **/
 
-  public static void setModelQuery(SolrQueryRequest req, ModelQuery modelQuery) {
-    req.getContext().put(MODEL_QUERY, modelQuery);
+  public static void setScoringQuery(SolrQueryRequest req, LTRScoringQuery scoringQuery) {
+    req.getContext().put(SCORING_QUERY, scoringQuery);
   }
 
-  public static ModelQuery getModelQuery(SolrQueryRequest req) {
-    return (ModelQuery) req.getContext().get(MODEL_QUERY);
+  public static LTRScoringQuery getScoringQuery(SolrQueryRequest req) {
+    return (LTRScoringQuery) req.getContext().get(SCORING_QUERY);
   }
 
   /** isExtractingFeatures flag accessors **/
@@ -77,6 +80,14 @@ public class SolrQueryRequestContextUtils {
 
   public static String getFvStoreName(SolrQueryRequest req) {
     return (String) req.getContext().get(STORE);
+  }
+  
+  public static void setThreadManager(SolrQueryRequest req, LTRThreadModule threadManager){
+    req.getContext().put(THREAD_MGR, threadManager);
+  }
+  
+  public static LTRThreadModule getThreadManager(SolrQueryRequest req){
+    return (LTRThreadModule)req.getContext().get(THREAD_MGR);
   }
 
 }

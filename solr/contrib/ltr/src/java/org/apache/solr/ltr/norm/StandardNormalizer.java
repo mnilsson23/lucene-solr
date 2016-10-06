@@ -17,17 +17,18 @@
 package org.apache.solr.ltr.norm;
 
 import java.util.LinkedHashMap;
+import org.apache.solr.ltr.norm.NormalizerException;
 
 /**
  * A Normalizer to scale a feature value around an average-and-standard-deviation distribution.
  * <p>
  * Example configuration:
- * <table summary="">
- * <tr><td>"norm" : {</td></tr>
- * <tr><td></td><td>"class" :  </td><td>"org.apache.solr.ltr.norm.StandardNormalizer",</td></tr>
- * <tr><td></td><td>"params" : </td><td>{ "avg":"42", "std":"6" }</td></tr>
- * <tr><td>}</td></tr>
- * </table>
+<pre>
+"norm" : {
+    "class" : "org.apache.solr.ltr.norm.StandardNormalizer",
+    "params" : { "avg":"42", "std":"6" }
+}
+</pre>
  * <p>
  * Example normalizations:
  * <ul>
@@ -68,6 +69,15 @@ public class StandardNormalizer extends Normalizer {
   @Override
   public float normalize(float value) {
     return (value - avg) / std;
+  }
+  
+  @Override
+  protected void validate() throws NormalizerException {
+    super.validate();
+    if (std <= 0f)
+      throw 
+      new NormalizerException("Standard Normalizer standard deviation must "
+            + "be positive | avg = " + avg + ",std = " + std);
   }
 
   @Override

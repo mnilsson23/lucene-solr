@@ -40,8 +40,7 @@ import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.ltr.LTRThreadModule;
-import org.apache.solr.ltr.ModelQuery;
+import org.apache.solr.ltr.LTRScoringQuery;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.feature.ValueFeature;
 import org.apache.solr.ltr.model.LTRScoringModel;
@@ -84,8 +83,8 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     return nameParams;
   }
 
-  private ModelQuery.ModelWeight performQuery(TopDocs hits,
-      IndexSearcher searcher, int docid, ModelQuery model) throws IOException,
+  private LTRScoringQuery.ModelWeight performQuery(TopDocs hits,
+      IndexSearcher searcher, int docid, LTRScoringQuery model) throws IOException,
       ModelException {
     final List<LeafReaderContext> leafContexts = searcher.getTopReaderContext()
         .leaves();
@@ -99,8 +98,8 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     // rerank using the field final-score
     scorer.iterator().advance(deBasedDoc);
     scorer.score();
-    assertTrue(weight instanceof ModelQuery.ModelWeight);
-    final ModelQuery.ModelWeight modelWeight = (ModelQuery.ModelWeight) weight;
+    assertTrue(weight instanceof LTRScoringQuery.ModelWeight);
+    final LTRScoringQuery.ModelWeight modelWeight = (LTRScoringQuery.ModelWeight) weight;
     return modelWeight;
 
   }
@@ -133,7 +132,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
   }
  
   @Test
-  public void testModelQueryWeightCreation() throws IOException, ModelException {
+  public void testScoringQueryWeightCreation() throws IOException, ModelException {
     final Directory dir = newDirectory();
     final RandomIndexWriter w = new RandomIndexWriter(random(), dir);
 
@@ -175,11 +174,11 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     }
 
     // when features are NOT requested in the response, only the modelFeature weights should be created
-    final LTRScoringModel meta1 = TestRankSVMModel.createRankSVMModel("test",
+    final LTRScoringModel ltrScoringModel1 = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
-    ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(meta1, false)); // features not requested in response
+    LTRScoringQuery.ModelWeight modelWeight = performQuery(hits, searcher,
+        hits.scoreDocs[0].doc, new LTRScoringQuery(ltrScoringModel1, false)); // features not requested in response
     
     assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
     int validFeatures = 0;
@@ -191,11 +190,11 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     assertEquals(validFeatures, features.size());
     
     // when features are requested in the response, weights should be created for all features
-    final LTRScoringModel meta2 = TestRankSVMModel.createRankSVMModel("test",
+    final LTRScoringModel ltrScoringModel2 = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
     modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(meta2, true)); // features requested in response
+        hits.scoreDocs[0].doc, new LTRScoringQuery(ltrScoringModel2, true)); // features requested in response
 
     assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
     assertEquals(allFeatures.size(), modelWeight.extractedFeatureWeights.length);
@@ -221,10 +220,9 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     query.setQuery("*:*");
     query.add("fl", "*,score");
     query.add("rows", "4");
-  
     query.add("rq", "{!ltr reRankDocs=4 model=externalmodel efi.user_query=w3}");
     query.add("fl", "fv:[fv]");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
+
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[1]/id=='3'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[2]/id=='4'");
@@ -235,7 +233,7 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     query.add("fl", "*,score");
     query.add("rq", "{!ltr reRankDocs=4 model=externalmodel efi.user_query=w3}");
     query.add("fl", "fv:[fv store=fstore4 efi.myPop=3]");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
+
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/score==0.999");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fv=='popularity:3.0;originalScore:1.0'"); // extract all features from fstore4
@@ -246,118 +244,9 @@ public class TestSelectiveWeightCreation extends TestRerankBase {
     query.add("fl", "*,score");
     query.add("rq", "{!ltr reRankDocs=4 model=externalmodelstore efi.user_query=w3 efi.myconf=0.8}");
     query.add("fl", "fv:[fv store=fstore4 efi.myPop=3]");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'"); // score using fstore2 used by externalmodelstore
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/score==0.7992");
     assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/fv=='popularity:3.0;originalScore:1.0'"); // extract all features from fstore4
   }
-  
-  @Test
-  public void testModelQueryParallelWeightCreationResultOrder() throws Exception {
-    // check to make sure that the ordewr of results will be the same when using parallel weight creation
-    final SolrQuery query = new SolrQuery();
-    query.setQuery("*:*");
-    query.add("fl", "*,score");
-    query.add("rows", "4");
-  
-    query.add("rq", "{!ltr reRankDocs=4 model=externalmodel efi.user_query=w3}");
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
-    assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
-    assertJQ("/query" + query.toQueryString(), "/response/docs/[1]/id=='3'");
-    assertJQ("/query" + query.toQueryString(), "/response/docs/[2]/id=='4'");
-    
-    
-    LTRThreadModule.setThreads(10, 10);
-    LTRThreadModule.initSemaphore();
-    System.out.println(restTestHarness.query("/query" + query.toQueryString()));
-    assertJQ("/query" + query.toQueryString(), "/response/docs/[0]/id=='1'");
-    assertJQ("/query" + query.toQueryString(), "/response/docs/[1]/id=='3'");
-    assertJQ("/query" + query.toQueryString(), "/response/docs/[2]/id=='4'");
-    LTRThreadModule.setThreads(0, 0);
-    LTRThreadModule.ltrSemaphore = null;
-  }
-  
-  @Test
-  public void testModelQueryParallelWeightCreation() throws IOException, ModelException {
-    final Directory dir = newDirectory();
-    final RandomIndexWriter w = new RandomIndexWriter(random(), dir);
-
-    Document doc = new Document();
-    doc.add(newStringField("id", "0", Field.Store.YES));
-    doc.add(newTextField("field", "wizard of the the the the the oz",
-        Field.Store.NO));
-    doc.add(new FloatDocValuesField("final-score", 1.0f));
-    w.addDocument(doc);
-    
-    doc = new Document();
-    doc.add(newStringField("id", "1", Field.Store.YES));
-    doc.add(newTextField("field", "wizard of the the hat the the the oz",
-        Field.Store.NO));
-    doc.add(new FloatDocValuesField("final-score", 2.0f));
-    w.addDocument(doc);
-    
-    doc = new Document();
-    doc.add(newStringField("id", "2", Field.Store.YES));
-    // 1 extra token, but wizard and oz are close;
-    doc.add(newTextField("field", "wizard oz hat the the the the the the hat",
-        Field.Store.NO));
-    doc.add(new FloatDocValuesField("final-score", 3.0f));
-    w.addDocument(doc);
-
-    final IndexReader r = w.getReader();
-    w.close();
-
-    // Do ordinary BooleanQuery:
-    final Builder bqBuilder = new Builder();
-    bqBuilder.add(new TermQuery(new Term("field", "wizard")), Occur.SHOULD);
-    bqBuilder.add(new TermQuery(new Term("field", "hat")), Occur.SHOULD);
-    bqBuilder.add(new TermQuery(new Term("field", "oz")), Occur.SHOULD);
-    final IndexSearcher searcher = getSearcher(r);
-    // first run the standard query
-    TopDocs hits = searcher.search(bqBuilder.build(), 10);
-    assertEquals(3, hits.totalHits);
-    assertEquals("2", searcher.doc(hits.scoreDocs[0].doc).get("id"));
-
-    List<Feature> features = makeFeatures(new int[] {0, 2, 3});
-    final List<Feature> allFeatures = makeFeatures(new int[] {0, 1, 2, 3, 4, 5,
-        6, 7, 8, 9});
-    final List<Normalizer> norms = new ArrayList<>();
-    for (int k=0; k < features.size(); ++k){
-        norms.add(IdentityNormalizer.INSTANCE);
-    }
-    
-    // setting the value of number of threads to -ve should throw an exception 
-    String msg1 = null;
-    try{
-      LTRThreadModule.setThreads(1, -1);
-    }catch(NumberFormatException nfe){
-        msg1 = nfe.getMessage();
-    }
-    assertTrue(msg1.equals("LTRMaxQueryThreads cannot be less than 0"));
-    
-   // set LTRMaxThreads to 1 and LTRMaxQueryThreads to 2 and verify that an exception is thrown
-    String msg2 = null;
-    try{
-       LTRThreadModule.setThreads(1, 2);
-    }catch(NumberFormatException nfe){
-        msg2 = nfe.getMessage();
-    }
-    assertTrue(msg2.equals("LTRMaxQueryThreads cannot be greater than LTRMaxThreads"));
-    // When maxThreads is set to 1, no threading should be used but the weight creation should run serially
-    LTRThreadModule.setThreads(1, 1);
-    LTRThreadModule.initSemaphore();
-    final LTRScoringModel meta1 = TestRankSVMModel.createRankSVMModel("test",
-        features, norms, "test", allFeatures,
-        makeFeatureWeights(features));
-    ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(meta1, false)); // features not requested in response  
-    assertEquals(features.size(), modelWeight.modelFeatureValuesNormalized.length);
-    LTRThreadModule.setThreads(0, 0);
-    LTRThreadModule.ltrSemaphore = null;
-    
-    r.close();
-    dir.close();
-  }
-  
 }
 

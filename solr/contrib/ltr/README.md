@@ -377,11 +377,11 @@ from the Extract features section above to do this. An example script has been i
 # Explanation of the core reranking logic
 An LTR model is plugged into the ranking through the [LTRQParserPlugin](/solr/contrib/ltr/src/java/org/apache/solr/search/LTRQParserPlugin.java). The plugin will
 read from the request the model, an instance of [LTRScoringModel](solr/contrib/ltr/src/java/org/apache/solr/ltr/model/LTRScoringModel.java),
-plus other parameters. The plugin will generate an LTRQuery, a particular org.apache.solr.search. RankQuery.
-It wraps the original solr query for the first pass ranking, and uses the provided model in a
-[ModelQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ModelQuery.java) to
-rescore and rerank the top documents.  The ModelQuery will take care of computing the values of all the
-[features](solr/contrib/ltr/src/java/org/apache/solr/ltr/feature/Feature.java) and then will delegate the final score
+plus other parameters. The plugin will generate an LTRQuery, a particular org.apache.solr.search.RankQuery.
+It wraps the original solr query for the first pass ranking, and uses the provided model in an
+[LTRScoringQuery](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/LTRScoringQuery.java) to
+rescore and rerank the top documents.  The LTRScoringQuery will take care of computing the values of all the
+[features](solr/contrib/ltr/src/java/org/apache/solr/ltr/ranking/Feature.java) and then will delegate the final score
 generation to the LTRScoringModel.
 
 # Speeding up the weight creation with threads
@@ -391,12 +391,12 @@ About half the time for ranking is spent in the creation of weights for each fea
 <config>
   <!-- Query parser used to rerank top docs with a provided model -->
   <queryParser name="ltr" class="org.apache.solr.search.LTRQParserPlugin">
-     <int name="LTRMaxThreads">10</int> <!-- Maximum threads to use for all queries -->
-     <int name="LTRMaxQueryThreads">5</int> <!-- Maximum threads to use for a single query-->
+     <int name="maxThreads">10</int> <!-- Maximum threads to use for all queries -->
+     <int name="maxQueryThreads">5</int> <!-- Maximum threads to use for a single query-->
   </queryParser>
 </config>
 
 ```
   
-The LTRMaxThreads option limits the total number of threads to be used across all query instances at any given time. LTRMaxQueryThreads limits the number of threads used to process a single query. In the above example, 10 threads will be used to services all queries and a maximum of 5 threads to service a single query. If the solr instances is expected to receive no more than one query at a time, it is best to set both these numbers to the same value. If multiple queries need to serviced simultaneously, the numbers can be adjusted based on the expected response times. If the value of  LTRMaxQueryThreads is higher, the reponse time for a single query will be improved upto a point. If multiple queries are services simultaneously, the LTRMaxThreads imposes a contention between the queries if (LTRMaxQueryThreads*total parallel queries > LTRMaxThreads). 
+The maxThreads option limits the total number of threads to be used across all query instances at any given time. maxQueryThreads limits the number of threads used to process a single query. In the above example, 10 threads will be used to services all queries and a maximum of 5 threads to service a single query. If the solr instances is expected to receive no more than one query at a time, it is best to set both these numbers to the same value. If multiple queries need to serviced simultaneously, the numbers can be adjusted based on the expected response times. If the value of  maxQueryThreads is higher, the reponse time for a single query will be improved upto a point. If multiple queries are services simultaneously, the maxThreads imposes a contention between the queries if (maxQueryThreads*total parallel queries > maxThreads). 
 

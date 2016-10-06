@@ -32,7 +32,7 @@ import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.ltr.LTRRescorer;
 import org.apache.solr.ltr.LTRThreadModule;
-import org.apache.solr.ltr.ModelQuery;
+import org.apache.solr.ltr.LTRScoringQuery;
 import org.apache.solr.ltr.SolrQueryRequestContextUtils;
 import org.apache.solr.ltr.model.LTRScoringModel;
 import org.apache.solr.core.SolrResourceLoader;
@@ -45,6 +45,7 @@ import org.apache.solr.rest.RestManager;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.SyntaxError;
+import org.apache.solr.util.SolrPluginUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +70,7 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
 
   private ManagedFeatureStore fr = null;
   private ManagedModelStore mr = null;
+  private LTRThreadModule threadManager = null;
 
   /** query parser plugin: the name of the attribute for setting the model **/
   public static final String MODEL = "model";
@@ -82,30 +84,32 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
    **/
   public static final String RERANK_DOCS = "reRankDocs";
 
-  private static int getInt(Object thObj, int defValue, String paramName) throws NumberFormatException{
-    if (thObj != null) {
-      try{
-        return Integer.parseInt(thObj.toString());
-      }catch(NumberFormatException nfe){
-        String errorStr = nfe.toString() + ":" + paramName + " not an integer";
-        throw new NumberFormatException(errorStr);
-      }
-    }
-    return defValue;
+  private int maxThreads  = LTRThreadModule.DEFAULT_MAX_THREADS;
+  private int maxQueryThreads = LTRThreadModule.DEFAULT_MAX_QUERYTHREADS;
+
+  public void setMaxThreads(int maxThreads) {
+    this.maxThreads = maxThreads;
+  }
+
+  public void setMaxQueryThreads(int maxQueryThreads) {
+    this.maxQueryThreads = maxQueryThreads;
   }
 
   @Override
   public void init(@SuppressWarnings("rawtypes") NamedList args) {
-    int maxThreads  = getInt(args.get("LTRMaxThreads"), LTRThreadModule.DEFAULT_MAX_THREADS, "LTRMaxThreads");
-    int maxQueryThreads = getInt(args.get("LTRMaxQueryThreads"), LTRThreadModule.DEFAULT_MAX_QUERYTHREADS, "LTRMaxQueryThreads");
-    LTRThreadModule.setThreads(maxThreads, maxQueryThreads);
-    LTRThreadModule.initSemaphore();
+    SolrPluginUtils.invokeSetters(this, args);
+    threadManager = new LTRThreadModule(maxThreads, maxQueryThreads);
   }
-
+  
   @Override
   public QParser createParser(String qstr, SolrParams localParams,
       SolrParams params, SolrQueryRequest req) {
+    SolrQueryRequestContextUtils.setThreadManager(req, threadManager);
     return new LTRQParser(qstr, localParams, params, req);
+  }
+  
+  public LTRThreadModule getThreadMgr(){
+    return threadManager;
   }
   
   /**
@@ -180,50 +184,50 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
             "Must provide model in the request");
       }
      
-      final LTRScoringModel meta = mr.getModel(modelName);
-      if (meta == null) {
+      final LTRScoringModel ltrScoringModel = mr.getModel(modelName);
+      if (ltrScoringModel == null) {
         throw new SolrException(ErrorCode.BAD_REQUEST,
             "cannot find " + LTRQParserPlugin.MODEL + " " + modelName);
       }
 
-      final String modelFeatureStoreName = meta.getFeatureStoreName();
+      final String modelFeatureStoreName = ltrScoringModel.getFeatureStoreName();
       final boolean extractFeatures = SolrQueryRequestContextUtils.isExtractingFeatures(req);
       final String fvStoreName = SolrQueryRequestContextUtils.getFvStoreName(req);
       // Check if features are requested and if the model feature store and feature-transform feature store are the same
       final boolean featuresRequestedFromSameStore = (modelFeatureStoreName.equals(fvStoreName) || fvStoreName == null) ? extractFeatures:false;
       
-      final ModelQuery reRankModel = new ModelQuery(meta, 
+      final LTRScoringQuery scoringQuery = new LTRScoringQuery(ltrScoringModel, 
           extractEFIParams(localParams), 
-          featuresRequestedFromSameStore);
+          featuresRequestedFromSameStore, getThreadMgr());
 
       // Enable the feature vector caching if we are extracting features, and the features
       // we requested are the same ones we are reranking with 
       if (featuresRequestedFromSameStore) {
-        reRankModel.setFeatureLogger( SolrQueryRequestContextUtils.getFeatureLogger(req) );
+        scoringQuery.setFeatureLogger( SolrQueryRequestContextUtils.getFeatureLogger(req) );
       }
-      SolrQueryRequestContextUtils.setModelQuery(req, reRankModel);
+      SolrQueryRequestContextUtils.setScoringQuery(req, scoringQuery);
 
       int reRankDocs = localParams.getInt(RERANK_DOCS, DEFAULT_RERANK_DOCS);
       reRankDocs = Math.max(1, reRankDocs);
 
       // External features
-      reRankModel.setRequest(req);
+      scoringQuery.setRequest(req);
 
-      return new LTRQuery(reRankModel, reRankDocs);
+      return new LTRQuery(scoringQuery, reRankDocs);
     }
   }
 
   private class LTRQuery extends AbstractReRankQuery {
-    private final ModelQuery reRankModel;
+    private final LTRScoringQuery scoringQuery;
 
-    public LTRQuery(ModelQuery reRankModel, int reRankDocs) {
-      super(defaultQuery, reRankDocs, new LTRRescorer(reRankModel));
-      this.reRankModel = reRankModel;
+    public LTRQuery(LTRScoringQuery scoringQuery, int reRankDocs) {
+      super(defaultQuery, reRankDocs, new LTRRescorer(scoringQuery));
+      this.scoringQuery = scoringQuery;
     }
 
     @Override
     public int hashCode() {
-      return 31 * classHash() + (mainQuery.hashCode() + reRankModel.hashCode() + reRankDocs);
+      return 31 * classHash() + (mainQuery.hashCode() + scoringQuery.hashCode() + reRankDocs);
     }
 
     @Override
@@ -233,25 +237,25 @@ public class LTRQParserPlugin extends QParserPlugin implements ResourceLoaderAwa
 
     private boolean equalsTo(LTRQuery other) {    
       return (mainQuery.equals(other.mainQuery)
-          && reRankModel.equals(other.reRankModel) && (reRankDocs == other.reRankDocs));
+          && scoringQuery.equals(other.scoringQuery) && (reRankDocs == other.reRankDocs));
     }
 
     @Override
     public RankQuery wrap(Query _mainQuery) {
       super.wrap(_mainQuery);    
-      reRankModel.setOriginalQuery(_mainQuery);
+      scoringQuery.setOriginalQuery(_mainQuery);
       return this;
     }
 
     @Override
     public String toString(String field) {
-      return "{!ltr mainQuery='" + mainQuery.toString() + "' reRankModel='"
-          + reRankModel.toString() + "' reRankDocs=" + reRankDocs + "}";
+      return "{!ltr mainQuery='" + mainQuery.toString() + "' scoringQuery='"
+          + scoringQuery.toString() + "' reRankDocs=" + reRankDocs + "}";
     }
     
     @Override
     protected Query rewrite(Query rewrittenMainQuery) throws IOException {
-      return new LTRQuery(reRankModel, reRankDocs).wrap(rewrittenMainQuery);
+      return new LTRQuery(scoringQuery, reRankDocs).wrap(rewrittenMainQuery);
     }
   }
 

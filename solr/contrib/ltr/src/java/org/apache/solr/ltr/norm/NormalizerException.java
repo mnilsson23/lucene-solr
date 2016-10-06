@@ -14,10 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
-/** 
- * APIs and classes for implementing learning-to-rank (ltr) QueryParser.
- */
-package org.apache.solr.search.ltr;
+package org.apache.solr.ltr.norm;
 
+public class NormalizerException extends RuntimeException {
 
+  private static final long serialVersionUID = 1L;
+
+  public NormalizerException(String message) {
+    super(message);
+  }
+
+  public NormalizerException(String message, Exception cause) {
+    super(message, cause);
+  }
+
+}

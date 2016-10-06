@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * The ranking query that is run, reranking results using the
  * LTRScoringModel algorithm
  */
-public class ModelQuery extends Query {
+public class LTRScoringQuery extends Query {
 
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -74,22 +74,30 @@ public class ModelQuery extends Query {
   protected Query originalQuery;
   // Original solr request
   protected SolrQueryRequest request;
+  protected LTRThreadModule ltrThreadMgr = null;
 
-  public ModelQuery(LTRScoringModel ltrScoringModel) {
-    this(ltrScoringModel, Collections.emptyMap(), false);
+  public LTRScoringQuery(LTRScoringModel ltrScoringModel) {
+    this(ltrScoringModel, Collections.<String,String[]>emptyMap(), false, null);
   }
 
-  public ModelQuery(LTRScoringModel ltrScoringModel, boolean extractAllFeatures) {
-    this(ltrScoringModel, Collections.emptyMap(), extractAllFeatures);
+  public LTRScoringQuery(LTRScoringModel ltrScoringModel, boolean extractAllFeatures) {
+    this(ltrScoringModel, Collections.<String, String[]>emptyMap(), extractAllFeatures, null);
   }
 
-  public ModelQuery(LTRScoringModel ltrScoringModel, 
-      Map<String,String[]> externalFeatureInfo, 
-      boolean extractAllFeatures) {
+  public LTRScoringQuery(LTRScoringModel ltrScoringModel, 
+      Map<String, String[]> externalFeatureInfo, 
+      boolean extractAllFeatures, LTRThreadModule threadMgr) {
     this.ltrScoringModel = ltrScoringModel;
     this.efi = externalFeatureInfo;
-    this.extractAllFeatures = extractAllFeatures; 
-    querySemaphore = new Semaphore(LTRThreadModule.getMaxQueryThreads());
+    this.extractAllFeatures = extractAllFeatures;
+    if (threadMgr != null && threadMgr.getMaxQueryThreads() > 1){
+       ltrThreadMgr = threadMgr;
+       querySemaphore = new Semaphore(ltrThreadMgr.getMaxQueryThreads());
+    }
+    else{
+      ltrThreadMgr = new LTRThreadModule(LTRThreadModule.DEFAULT_MAX_THREADS, LTRThreadModule.DEFAULT_MAX_QUERYTHREADS);
+      querySemaphore = null;
+    }
   }
 
   public LTRScoringModel getScoringModel() {
@@ -150,7 +158,7 @@ public class ModelQuery extends Query {
     return sameClassAs(o) &&  equalsTo(getClass().cast(o));
   }
 
-  private boolean equalsTo(ModelQuery other) {
+  private boolean equalsTo(LTRScoringQuery other) {
     if (ltrScoringModel == null) {
       if (other.ltrScoringModel != null) {
         return false;
@@ -202,7 +210,7 @@ public class ModelQuery extends Query {
     final FeatureWeight[] modelFeaturesWeights = new FeatureWeight[modelFeatSize];
     List<FeatureWeight > featureWeights = new ArrayList<>(features.size());
     
-    if(LTRThreadModule.getMaxThreads() <= 1 || LTRThreadModule.getMaxQueryThreads() <= 1){
+    if(ltrThreadMgr.getMaxThreads() <= 1 || ltrThreadMgr.getMaxQueryThreads() <= 1){
        createWeights(searcher, needsScores, boost, featureWeights, features);
     }
     else{
@@ -264,7 +272,7 @@ public class ModelQuery extends Query {
             + e.getMessage(), e);
       } finally {
         querySemaphore.release();
-        LTRThreadModule.ltrSemaphore.release();
+        ltrThreadMgr.getLTRSemaphore().release();
       }
     }
   } // end of call CreateWeightCallable
@@ -273,14 +281,14 @@ public class ModelQuery extends Query {
       List<FeatureWeight > featureWeights, Collection<Feature> features) throws RuntimeException {
 
     final SolrQueryRequest req = getRequest();
-    Executor executor = LTRThreadModule.createWeightScoreExecutor;
+    Executor executor = ltrThreadMgr.getCreateWeightScoreExecutor();
     List<Future<FeatureWeight> > futures = new ArrayList<>(features.size());
     try{
       for (final Feature f : features) {
         CreateWeightCallable callable = new CreateWeightCallable(f, searcher, needsScores, req);
         RunnableFuture<FeatureWeight> runnableFuture = new FutureTask<>(callable);
         querySemaphore.acquire(); // always acquire before the ltrSemaphore is acquired, to guarantee a that the current query is within the limit for max. threads 
-        LTRThreadModule.ltrSemaphore.acquire();//may block and/or interrupt
+        ltrThreadMgr.getLTRSemaphore().acquire();//may block and/or interrupt
         executor.execute(runnableFuture);//releases semaphore when done
         futures.add(runnableFuture);
       }
@@ -363,7 +371,7 @@ public class ModelQuery extends Query {
      */
     public ModelWeight(IndexSearcher searcher, FeatureWeight[] modelFeatureWeights,
         FeatureWeight[] extractedFeatureWeights, int allFeaturesSize) {
-      super(ModelQuery.this);
+      super(LTRScoringQuery.this);
       this.searcher = searcher;
       this.extractedFeatureWeights = extractedFeatureWeights;
       this.modelFeatureWeights = modelFeatureWeights;
@@ -514,7 +522,7 @@ public class ModelQuery extends Query {
 
       public class SparseModelScorer extends Scorer {
         protected DisiPriorityQueue subScorers;
-        protected ModelQuerySparseIterator itr;
+        protected ScoringQuerySparseIterator itr;
 
         protected int targetDoc = -1;
         protected int activeDoc = -1;
@@ -532,7 +540,7 @@ public class ModelQuery extends Query {
             subScorers.add(w);
           }
 
-          itr = new ModelQuerySparseIterator(subScorers);
+          itr = new ScoringQuerySparseIterator(subScorers);
         }
 
         @Override
@@ -586,10 +594,10 @@ public class ModelQuery extends Query {
           return children;
         }
 
-        protected class ModelQuerySparseIterator extends
+        protected class ScoringQuerySparseIterator extends
         DisjunctionDISIApproximation {
 
-          public ModelQuerySparseIterator(DisiPriorityQueue subIterators) {
+          public ScoringQuerySparseIterator(DisiPriorityQueue subIterators) {
             super(subIterators);
           }
 

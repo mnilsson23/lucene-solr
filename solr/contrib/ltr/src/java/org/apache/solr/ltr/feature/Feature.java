@@ -57,12 +57,24 @@ public abstract class Feature extends Query {
     if (params != null) {
       SolrPluginUtils.invokeSetters(f, params.entrySet());
     }
+    f.validate();
     return f;
   }
 
   public Feature(String name, Map<String,Object> params) {
     this.name = name;
     this.params = params;
+  }
+  
+  /**
+   * On construction of a feature, this function confirms
+   * that the feature parameters are validated
+   * 
+   * @throws FeatureException
+   *             Feature Exception
+   */
+  protected void validate() throws FeatureException {
+    
   }
 
   @Override

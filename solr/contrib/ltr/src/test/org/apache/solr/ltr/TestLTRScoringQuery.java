@@ -43,8 +43,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.apache.solr.core.SolrResourceLoader;
-import org.apache.solr.ltr.ModelQuery;
-import org.apache.solr.ltr.ModelQuery.FeatureInfo;
+import org.apache.solr.ltr.LTRScoringQuery;
+import org.apache.solr.ltr.LTRScoringQuery.FeatureInfo;
 import org.apache.solr.ltr.feature.Feature;
 import org.apache.solr.ltr.feature.ValueFeature;
 import org.apache.solr.ltr.model.LTRScoringModel;
@@ -55,7 +55,7 @@ import org.apache.solr.ltr.norm.Normalizer;
 import org.junit.Test;
 
 @SuppressCodecs("Lucene3x")
-public class TestModelQuery extends LuceneTestCase {
+public class TestLTRScoringQuery extends LuceneTestCase {
 
   public final static SolrResourceLoader solrResourceLoader = new SolrResourceLoader();
 
@@ -102,8 +102,8 @@ public class TestModelQuery extends LuceneTestCase {
     return nameParams;
   }
 
-  private ModelQuery.ModelWeight performQuery(TopDocs hits,
-      IndexSearcher searcher, int docid, ModelQuery model) throws IOException,
+  private LTRScoringQuery.ModelWeight performQuery(TopDocs hits,
+      IndexSearcher searcher, int docid, LTRScoringQuery model) throws IOException,
       ModelException {
     final List<LeafReaderContext> leafContexts = searcher.getTopReaderContext()
         .leaves();
@@ -121,14 +121,14 @@ public class TestModelQuery extends LuceneTestCase {
     // assertEquals(42.0f, score, 0.0001);
     // assertTrue(weight instanceof AssertingWeight);
     // (AssertingIndexSearcher)
-    assertTrue(weight instanceof ModelQuery.ModelWeight);
-    final ModelQuery.ModelWeight modelWeight = (ModelQuery.ModelWeight) weight;
+    assertTrue(weight instanceof LTRScoringQuery.ModelWeight);
+    final LTRScoringQuery.ModelWeight modelWeight = (LTRScoringQuery.ModelWeight) weight;
     return modelWeight;
 
   }
 
   @Test
-  public void testModelQueryEquality() throws ModelException {
+  public void testLTRScoringQueryEquality() throws ModelException {
     final List<Feature> features = makeFeatures(new int[] {0, 1, 2});
     final List<Normalizer> norms = 
         new ArrayList<Normalizer>(
@@ -141,17 +141,19 @@ public class TestModelQuery extends LuceneTestCase {
         "testModelName",
         features, norms, "testStoreName", allFeatures, modelParams);
 
-    final ModelQuery m0 = new ModelQuery(algorithm1);
+    final LTRScoringQuery m0 = new LTRScoringQuery(algorithm1);
 
     final HashMap<String,String[]> externalFeatureInfo = new HashMap<>();
     externalFeatureInfo.put("queryIntent", new String[] {"company"});
     externalFeatureInfo.put("user_query", new String[] {"abc"});
-    final ModelQuery m1 = new ModelQuery(algorithm1, externalFeatureInfo, false);
+    final LTRScoringQuery m1 = new LTRScoringQuery(algorithm1, externalFeatureInfo, false, null);
 
     final HashMap<String,String[]> externalFeatureInfo2 = new HashMap<>();
     externalFeatureInfo2.put("user_query", new String[] {"abc"});
     externalFeatureInfo2.put("queryIntent", new String[] {"company"});
-    final ModelQuery m2 = new ModelQuery(algorithm1, externalFeatureInfo2, false);
+    int maxThreads = 10, maxQueryThreads = 10;
+    LTRThreadModule threadManager = new LTRThreadModule(maxThreads, maxQueryThreads);
+    final LTRScoringQuery m2 = new LTRScoringQuery(algorithm1, externalFeatureInfo2, false, threadManager);
 
 
     // Models with same algorithm and efis, just in different order should be the same
@@ -166,7 +168,7 @@ public class TestModelQuery extends LuceneTestCase {
     final LTRScoringModel algorithm2 = TestRankSVMModel.createRankSVMModel(
         "testModelName2",
         features, norms, "testStoreName", allFeatures, modelParams);
-    final ModelQuery m3 = new ModelQuery(algorithm2);
+    final LTRScoringQuery m3 = new LTRScoringQuery(algorithm2);
 
     assertFalse(m1.equals(m3));
     assertFalse(m1.hashCode() == m3.hashCode());
@@ -174,7 +176,7 @@ public class TestModelQuery extends LuceneTestCase {
     final LTRScoringModel algorithm3 = TestRankSVMModel.createRankSVMModel(
         "testModelName",
         features, norms, "testStoreName3", allFeatures, modelParams);
-    final ModelQuery m4 = new ModelQuery(algorithm3);
+    final LTRScoringQuery m4 = new LTRScoringQuery(algorithm3);
 
     assertFalse(m1.equals(m4));
     assertFalse(m1.hashCode() == m4.hashCode());
@@ -182,7 +184,7 @@ public class TestModelQuery extends LuceneTestCase {
 
   
   @Test
-  public void testModelQuery() throws IOException, ModelException {
+  public void testLTRScoringQuery() throws IOException, ModelException {
     final Directory dir = newDirectory();
     final RandomIndexWriter w = new RandomIndexWriter(random(), dir);
 
@@ -221,12 +223,12 @@ public class TestModelQuery extends LuceneTestCase {
     List<Normalizer> norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-    LTRScoringModel meta = TestRankSVMModel.createRankSVMModel("test",
+    LTRScoringModel ltrScoringModel = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures,
         makeFeatureWeights(features));
 
-    ModelQuery.ModelWeight modelWeight = performQuery(hits, searcher,
-        hits.scoreDocs[0].doc, new ModelQuery(meta));
+    LTRScoringQuery.ModelWeight modelWeight = performQuery(hits, searcher,
+        hits.scoreDocs[0].doc, new LTRScoringQuery(ltrScoringModel));
     assertEquals(3, modelWeight.modelFeatureValuesNormalized.length);
 
     for (int i = 0; i < 3; i++) {
@@ -248,11 +250,11 @@ public class TestModelQuery extends LuceneTestCase {
     norms = 
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
-    meta = TestRankSVMModel.createRankSVMModel("test",
+    ltrScoringModel = TestRankSVMModel.createRankSVMModel("test",
         features, norms, "test", allFeatures, makeFeatureWeights(features));
 
     modelWeight = performQuery(hits, searcher, hits.scoreDocs[0].doc,
-        new ModelQuery(meta));
+        new LTRScoringQuery(ltrScoringModel));
     assertEquals(mixPositions.length,
         modelWeight.modelFeatureWeights.length);
     
@@ -268,11 +270,11 @@ public class TestModelQuery extends LuceneTestCase {
         new ArrayList<Normalizer>(
             Collections.nCopies(features.size(),IdentityNormalizer.INSTANCE));
     try {
-      meta = TestRankSVMModel.createRankSVMModel("test",
+      ltrScoringModel = TestRankSVMModel.createRankSVMModel("test",
           features, norms, "test", allFeatures, makeFeatureWeights(features));
       fail("unexpectedly got here instead of catching "+expectedModelException);
       modelWeight = performQuery(hits, searcher, hits.scoreDocs[0].doc,
-          new ModelQuery(meta));
+          new LTRScoringQuery(ltrScoringModel));
       assertEquals(0, modelWeight.modelFeatureWeights.length);
     } catch (ModelException actualModelException) {
       assertEquals(expectedModelException.toString(), actualModelException.toString());
@@ -300,7 +302,7 @@ public class TestModelQuery extends LuceneTestCase {
         makeFeatureWeights(features));
 
     modelWeight = performQuery(hits, searcher, hits.scoreDocs[0].doc,
-        new ModelQuery(normMeta));
+        new LTRScoringQuery(normMeta));
     normMeta.normalizeFeaturesInPlace(modelWeight.modelFeatureValuesNormalized);
     assertEquals(mixPositions.length,
         modelWeight.modelFeatureWeights.length);
