@@ -170,6 +170,9 @@ public abstract class FeatureLogger<FV_TYPE> {
 
     @Override
     public String makeFeatureVector(LTRScoringQuery.FeatureInfo[] featuresInfo) {
+      // Allocate the buffer to a size based on the number of features instead of the 
+      // default 16.  You need space for the name, value, and two separators per feature, 
+      // but not all the features are expected to fire, so this is just a naive estimate. 
       StringBuilder sb = new StringBuilder(featuresInfo.length * 3);
       boolean isDense = featureFormat.equals(FeatureFormat.DENSE);
       for (LTRScoringQuery.FeatureInfo featInfo:featuresInfo) {
