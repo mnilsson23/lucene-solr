@@ -123,9 +123,9 @@ public class SolrFeature extends Feature {
    * Weight for a SolrFeature
    **/
   public class SolrFeatureWeight extends FeatureWeight {
-    Weight solrQueryWeight;
-    Query query;
-    List<Query> queryAndFilters;
+    final private Weight solrQueryWeight;
+    final private Query query;
+    final private List<Query> queryAndFilters;
 
     public SolrFeatureWeight(IndexSearcher searcher,
         SolrQueryRequest request, Query originalQuery, Map<String,String[]> efi) throws IOException {
@@ -174,6 +174,8 @@ public class SolrFeature extends Feature {
         if (query != null) {
           queryAndFilters.add(query);
           solrQueryWeight = searcher.createNormalizedWeight(query, true);
+        } else {
+          solrQueryWeight = null;
         }
       } catch (final SyntaxError e) {
         throw new FeatureException("Failed to parse feature query.", e);
