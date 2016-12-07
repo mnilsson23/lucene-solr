@@ -30,19 +30,19 @@ import org.apache.solr.util.SolrPluginUtils;
 import org.apache.solr.util.plugin.NamedListInitializedPlugin;
 
 /**
- * The LTRThreadModule is optionally used by the {@link org.apache.solr.search.LTRQParserPlugin} and
- * {@link org.apache.solr.response.transform.LTRFeatureLoggerTransformerFactory LTRFeatureLoggerTransformerFactory}
+ * The LTRThreadModule is optionally used by the {@link org.apache.solr.ltr.search.LTRQParserPlugin} and
+ * {@link org.apache.solr.ltr.response.transform.LTRFeatureLoggerTransformerFactory LTRFeatureLoggerTransformerFactory}
  * classes to parallelize the creation of {@link org.apache.solr.ltr.feature.Feature.FeatureWeight Feature.FeatureWeight}
  * objects.
  * <p>
  * Example configuration:
  * <pre>
-  &lt;queryParser name="ltr" class="org.apache.solr.search.LTRQParserPlugin"&gt;
+  &lt;queryParser name="ltr" class="org.apache.solr.ltr.search.LTRQParserPlugin"&gt;
      &lt;int name="threadModule.totalPoolThreads"&gt;10&lt;/int&gt;
      &lt;int name="threadModule.numThreadsPerRequest"&gt;5&lt;/int&gt;
   &lt;/queryParser&gt;
 
-  &lt;transformer name="features" class="org.apache.solr.response.transform.LTRFeatureLoggerTransformerFactory"&gt;
+  &lt;transformer name="features" class="org.apache.solr.ltr.response.transform.LTRFeatureLoggerTransformerFactory"&gt;
      &lt;int name="threadModule.totalPoolThreads"&gt;10&lt;/int&gt;
      &lt;int name="threadModule.numThreadsPerRequest"&gt;5&lt;/int&gt;
   &lt;/transformer&gt;

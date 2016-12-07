@@ -32,6 +32,11 @@
   <caches lockStrategy="${ivy.lock-strategy}" resolutionCacheDir="${ivy.resolution-cache.dir}" />
 
   <resolvers>
+    <!-- {TEAM CBUILD:ARTIFACTORY<GO>} -->
+    <ibiblio name="main" m2compatible="true" root="http://nyartifactory.dev.bloomberg.com:8081/artifactory/root-repos" />
+    <ibiblio name="bb-art-main" root="http://artprod.dev.bloomberg.com/artifactory/root-repos" m2compatible="true" />
+    <ibiblio name="bb-art-jcenter" root="http://artprod.dev.bloomberg.com/artifactory/jcenter" m2compatible="true" />
+    <ibiblio name="bb-art-cloudera" root="http://artprod.dev.bloomberg.com/artifactory/cloudera.repo" m2compatible="true" />
     <ibiblio name="sonatype-releases" root="https://oss.sonatype.org/content/repositories/releases" m2compatible="true" />
     <ibiblio name="maven.restlet.org" root="http://maven.restlet.org" m2compatible="true" />
     <ibiblio name="releases.cloudera.com" root="http://repository.cloudera.com/content/repositories/releases" m2compatible="true" />
@@ -48,7 +53,9 @@
 
     <chain name="default" returnFirst="true" checkmodified="true" changingPattern=".*SNAPSHOT">
       <resolver ref="local"/>
-      <!-- <resolver ref="local-maven-2" /> -->
+      <resolver ref="bb-art-main"/>
+      <resolver ref="bb-art-jcenter"/>
+      <resolver ref="bb-art-cloudera"/>      <!-- <resolver ref="local-maven-2" /> -->
       <resolver ref="main"/>
       <resolver ref="maven.restlet.org" />
       <resolver ref="sonatype-releases" />
