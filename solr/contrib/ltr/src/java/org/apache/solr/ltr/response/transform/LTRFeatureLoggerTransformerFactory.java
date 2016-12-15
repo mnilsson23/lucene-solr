@@ -47,10 +47,18 @@ import org.apache.solr.util.SolrPluginUtils;
 
 /**
  * This transformer will take care to generate and append in the response the
- * features declared in the feature store of the current model. The class is
- * useful if you are not interested in the reranking (e.g., bootstrapping a
- * machine learning framework).
- */
+ * features declared in the feature store of the current reranking model,
+ * or a specified feature store.  Ex. <code>fl=id,[features store=myStore efi.user_text="ibm"]</code>
+ * 
+ * <h3>Parameters</h3>
+ * <code>store</code> - The feature store to extract features from. If not provided it
+ * will default to the features used by your reranking model.<br>
+ * <code>efi.*</code> - External feature information variables required by the features
+ * you are extracting.<br>
+ * <code>format</code> - The format you want the features to be returned in.  Supports (dense|sparse). Defaults to sparse.<br>
+ * <code>fvwt</code> - The feature vector output format. Supports (json/csv). Defaults to csv.<br>
+*/
+
 public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
 
   // used inside fl to specify the output format (csv/json) of the extracted features
@@ -95,28 +103,28 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
   }
 
   @Override
-  public DocTransformer create(String name, SolrParams params,
+  public DocTransformer create(String name, SolrParams localparams,
       SolrQueryRequest req) {
 
     // Hint to enable feature vector cache since we are requesting features
     SolrQueryRequestContextUtils.setIsExtractingFeatures(req);
 
     // Communicate which feature store we are requesting features for
-    SolrQueryRequestContextUtils.setFvStoreName(req, params.get(FV_STORE, defaultFvStore));
+    SolrQueryRequestContextUtils.setFvStoreName(req, localparams.get(FV_STORE, defaultFvStore));
 
     // Create and supply the feature logger to be used
     SolrQueryRequestContextUtils.setFeatureLogger(req,
         FeatureLogger.createFeatureLogger(
-            params.get(FV_RESPONSE_WRITER, defaultFvwt),
-            params.get(FV_FORMAT, defaultFvFormat)));
+            localparams.get(FV_RESPONSE_WRITER, defaultFvwt),
+            localparams.get(FV_FORMAT, defaultFvFormat)));
 
-    return new FeatureTransformer(name, params, req);
+    return new FeatureTransformer(name, localparams, req);
   }
 
   class FeatureTransformer extends DocTransformer {
 
     final private String name;
-    final private SolrParams params;
+    final private SolrParams localparams;
     final private SolrQueryRequest req;
 
     private List<LeafReaderContext> leafContexts;
@@ -131,10 +139,10 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
      *          Name of the field to be added in a document representing the
      *          feature vectors
      */
-    public FeatureTransformer(String name, SolrParams params,
+    public FeatureTransformer(String name, SolrParams localparams,
         SolrQueryRequest req) {
       this.name = name;
-      this.params = params;
+      this.localparams = localparams;
       this.req = req;
     }
 
@@ -178,7 +186,7 @@ public class LTRFeatureLoggerTransformerFactory extends TransformerFactory {
               featureStoreName, store.getFeatures());
 
           scoringQuery = new LTRScoringQuery(lm,
-              LTRQParserPlugin.extractEFIParams(params),
+              LTRQParserPlugin.extractEFIParams(localparams),
               true,
               threadManager); // request feature weights to be created for all features
 
